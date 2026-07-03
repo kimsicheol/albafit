@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>알바핏 — 걸어서 10분, 적성 90점</title>
+<meta property="og:title" content="알바핏 — 걸어서 10분, 적성 90점" />
+<meta property="og:description" content="알바를 그만두는 이유는 둘뿐 — 멀거나, 안 맞거나. 우리 동네 적성 매칭 알바핏" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<style>html,body{margin:0;padding:0;background:#F5F6F2}</style>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo } = React;
+
+// ---------- Design tokens ----------
+const C = {
+  bg: "#F5F6F2", paper: "#FFFFFF", ink: "#151B27", sub: "#5B6472", line: "#E3E6DE",
+  worker: "#2E56E8", workerSoft: "#E8EDFE",
+  company: "#0E9B6C", companySoft: "#E4F5EE",
+  local: "#FF6F1E", localSoft: "#FFEDE1",
+  gold: "#F2B441", warn: "#D9772B",
+};
+const font = "'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif";
+
+// ---------- 동네 ----------
+const DONGS = {
+  "명일동": [0, 0], "고덕동": [0.9, 0.8], "상일동": [1.9, 0.6], "암사동": [-1.4, 0.9],
+  "길동": [0.2, -1.1], "둔촌동": [0.6, -2.1], "천호동": [-1.3, -0.9], "성내동": [-1.1, -1.9],
+};
+const DONG_LIST = Object.keys(DONGS);
+function walkMin(a, b) {
+  if (a === b) return 6;
+  const [x1, y1] = DONGS[a], [x2, y2] = DONGS[b];
+  return Math.round(6 + Math.hypot(x1 - x2, y1 - y2) * 13);
+}
+function distScore(min) { return Math.max(0, Math.min(100, Math.round(112 - min * 3))); }
+function distTone(min) {
+  if (min <= 12) return { label: `도보 ${min}분 · 슬세권`, bg: C.localSoft, color: C.local };
+  if (min <= 22) return { label: `도보 ${min}분`, bg: "#FFF6E4", color: "#B07B14" };
+  return { label: `도보 ${min}분 · 버스권`, bg: "#F1F2ED", color: C.sub };
+}
+
+// ---------- 성향 축 ----------
+const TRAITS = [
+  { key: "routine", name: "반복 내성", desc: "같은 일을 꾸준히 해내는 힘" },
+  { key: "detail", name: "꼼꼼함", desc: "숫자·문서의 오류를 잡는 눈" },
+  { key: "people", name: "대인 응대", desc: "사람·전화 응대가 편한 정도" },
+  { key: "energy", name: "활동 체력", desc: "몸을 쓰는 일에 대한 선호" },
+  { key: "learning", name: "습득 속도", desc: "새 규칙·도구를 익히는 속도" },
+];
+const TRAIT_IDX = Object.fromEntries(TRAITS.map((t, i) => [t.key, i]));
+
+// ---------- 알바 유형 캐릭터 8종 ----------
+const CHARACTERS = [
+  {
+    id: "beaver", emoji: "🦫", name: "비버형", title: "조용히 쌓아 올리는 장인",
+    vec: { routine: 90, detail: 85, people: 20, energy: 25, learning: 50 },
+    desc: "묵묵히 자기 자리에서 완성도를 쌓는 타입. 반복 속에서 오히려 리듬을 찾습니다.",
+    best: "금융거래조회서 관리 · 데이터 입력", worst: "행사·전시 스태프",
+    line: "\u201C시끄러운 무대보다, 조용한 책상 위 완벽한 서류.\u201D",
+    goodWith: ["turtle", "owl"], hardWith: "parrot",
+  },
+  {
+    id: "owl", emoji: "🦉", name: "올빼미형", title: "오차를 못 참는 분석가",
+    vec: { routine: 60, detail: 92, people: 30, energy: 20, learning: 80 },
+    desc: "숫자 하나, 오타 하나가 눈에 걸리는 타입. 검토와 대조 업무에서 빛납니다.",
+    best: "회계자료 검토 · 도서관 자료 정리", worst: "물류센터 피킹",
+    line: "\u201C남들이 못 보는 0 하나를 찾아내는 사람.\u201D",
+    goodWith: ["beaver", "fox"], hardWith: "cheetah",
+  },
+  {
+    id: "retriever", emoji: "🐕", name: "리트리버형", title: "친화력 만렙 분위기 메이커",
+    vec: { routine: 45, detail: 50, people: 92, energy: 55, learning: 60 },
+    desc: "사람을 만나면 에너지가 차오르는 타입. 단골을 만드는 응대의 달인입니다.",
+    best: "카페 바리스타 · 학원 데스크", worst: "혼자 하는 데이터 입력",
+    line: "\u201C손님이 아니라 팬을 만드는 알바.\u201D",
+    goodWith: ["parrot", "turtle"], hardWith: null,
+  },
+  {
+    id: "cheetah", emoji: "🐆", name: "치타형", title: "짧고 굵게 달리는 스프린터",
+    vec: { routine: 20, detail: 35, people: 50, energy: 90, learning: 65 },
+    desc: "긴 호흡보다 강한 폭발력. 매번 다른 현장, 짧은 승부에서 최고 효율을 냅니다.",
+    best: "행사 스태프 · 단기 물류", worst: "장기 사무보조",
+    line: "\u201C같은 자리 두 달? 그건 제 스타일이 아닙니다.\u201D",
+    goodWith: ["parrot", "fox"], hardWith: "beaver",
+  },
+  {
+    id: "ant", emoji: "🐜", name: "개미형", title: "지치지 않는 성실 스태미나",
+    vec: { routine: 85, detail: 55, people: 25, energy: 82, learning: 35 },
+    desc: "몸을 쓰는 반복 작업을 꾸준히 해내는 타입. 체력과 성실함의 교집합입니다.",
+    best: "물류센터 · 매장 진열", worst: "돌발 상황 많은 행사 운영",
+    line: "\u201C오늘도 내일도, 같은 페이스로 완주.\u201D",
+    goodWith: ["beaver", "turtle"], hardWith: "cheetah",
+  },
+  {
+    id: "parrot", emoji: "🦜", name: "앵무형", title: "무대 체질 에너자이저",
+    vec: { routine: 25, detail: 40, people: 90, energy: 85, learning: 70 },
+    desc: "사람 많고 시끌벅적한 현장이 곧 놀이터. 행사장의 심장 같은 존재입니다.",
+    best: "행사·전시 운영 스태프", worst: "조용한 도서관 정리",
+    line: "\u201C마이크 잡으면 눈빛이 달라지는 사람.\u201D",
+    goodWith: ["retriever", "cheetah"], hardWith: "beaver",
+  },
+  {
+    id: "fox", emoji: "🦊", name: "여우형", title: "뭐든 빨리 배우는 올라운더",
+    vec: { routine: 40, detail: 60, people: 60, energy: 45, learning: 92 },
+    desc: "새 프로그램, 새 규칙을 하루 만에 흡수하는 타입. 신규 업무 세팅에 최적입니다.",
+    best: "학원 데스크 · 신규 매장 오픈 멤버", worst: "매뉴얼 그대로만 반복하는 일",
+    line: "\u201C이틀이면 됩니다. 뭐든지요.\u201D",
+    goodWith: ["owl", "retriever"], hardWith: "ant",
+  },
+  {
+    id: "turtle", emoji: "🐢", name: "거북형", title: "느긋하지만 끝까지 가는 완주자",
+    vec: { routine: 72, detail: 62, people: 45, energy: 40, learning: 45 },
+    desc: "화려하진 않아도 이탈이 없는 타입. 장기 근속률 1위, 사장님들의 최애 유형입니다.",
+    best: "도서관 보조 · 장기 사무 지원", worst: "당일치기 행사 알바",
+    line: "\u201C그만두는 법을 모르는 사람.\u201D",
+    goodWith: ["beaver", "ant"], hardWith: "cheetah",
+  },
+];
+const CHAR_BY_ID = Object.fromEntries(CHARACTERS.map(c => [c.id, c]));
+
+function typeRank(profile) {
+  return CHARACTERS.map(c => {
+    let d = 0;
+    TRAITS.forEach(({ key }) => { d += Math.abs(profile[key] - c.vec[key]); });
+    return { ...c, dist: d, matchPct: Math.max(40, Math.round(100 - d / 5)) };
+  }).sort((a, b) => a.dist - b.dist);
+}
+function compat(idA, idB) {
+  if (!idA || !idB) return { bonus: 0, label: null };
+  const A = CHAR_BY_ID[idA], B = CHAR_BY_ID[idB];
+  if (A.goodWith.includes(idB) || B.goodWith.includes(idA)) return { bonus: 5, label: "궁합 💚 +5" };
+  if (A.hardWith === idB || B.hardWith === idA) return { bonus: -5, label: "티격태격 ⚡ −5" };
+  return { bonus: 0, label: null };
+}
+
+// ---------- 사장님 30초 검사 (강제선택형 6문항) ----------
+// 설계 원칙: ① 리커트 대신 A/B 강제선택 → 자기 미화(사회적 바람직성) 억제
+//           ② 미덕이 아닌 '행동'을 묻는다  ③ 양쪽 모두 매력적인 선택지
+const BOSS_QUIZ = [
+  {
+    q: "새 알바생에게 일을 맡길 때, 솔직히 나는",
+    a: "매뉴얼 그대로 정확히 해주면 좋다", b: "상황 봐서 융통성 있게 해주면 좋다",
+    eff: { a: { routine: 22, detail: 8 }, b: { routine: -18, learning: 10 } },
+  },
+  {
+    q: "서류에서 오타를 발견하면",
+    a: "바로 눈에 걸린다, 고쳐야 속이 풀린다", b: "숫자만 맞으면 그냥 넘어간다",
+    eff: { a: { detail: 24 }, b: { detail: -18, energy: 6 } },
+  },
+  {
+    q: "우리 사무실(매장)의 이상적인 분위기는",
+    a: "직원·손님과 이야기가 오가는 활기", b: "각자 조용히 몰입하는 집중",
+    eff: { a: { people: 24, energy: 8 }, b: { people: -18, routine: 8 } },
+  },
+  {
+    q: "일이 잘 돌아가는지 챙기는 방식은",
+    a: "현장을 직접 돌아다니며 눈으로", b: "자리에서 자료와 숫자로",
+    eff: { a: { energy: 22, people: 6 }, b: { energy: -16, detail: 10 } },
+  },
+  {
+    q: "새 프로그램이나 도구가 나오면",
+    a: "내가 먼저 써보고 도입한다", b: "검증된 기존 방식을 유지한다",
+    eff: { a: { learning: 24 }, b: { learning: -18, routine: 10 } },
+  },
+  {
+    q: "알바생에게 업무 지시를 할 때",
+    a: "체크리스트나 문서로 남긴다", b: "말로 빠르게 전달한다",
+    eff: { a: { detail: 10, routine: 12 }, b: { people: 12, energy: 8 } },
+  },
+];
+function bossProfileFrom(answers) {
+  const p = { routine: 50, detail: 50, people: 50, energy: 50, learning: 50 };
+  BOSS_QUIZ.forEach((qz, i) => {
+    const pick = answers[i];
+    if (!pick) return;
+    Object.entries(qz.eff[pick]).forEach(([k, v]) => { p[k] = Math.max(0, Math.min(100, p[k] + v)); });
+  });
+  return p;
+}
+
+// ---------- 3단계 검사 ----------
+const STAGE1 = [
+  { t: "routine", q: "같은 작업을 반복해도 지루함을 잘 느끼지 않는다." },
+  { t: "detail", q: "문서나 표에서 오타·숫자 오류를 잘 찾아내는 편이다." },
+  { t: "people", q: "처음 보는 사람과 대화하는 것이 부담스럽지 않다." },
+  { t: "energy", q: "하루 종일 서서 움직이는 일도 괜찮다." },
+  { t: "learning", q: "새로운 프로그램이나 규칙을 빨리 익히는 편이다." },
+];
+// ===== 적응형 문항 은행 =====
+// 2단계 문항은 1단계 답변에 따라 축별로 달라진다:
+//  · 답이 '보통'(3) → 심화 탐침(probe)
+//  · 높게(4~5) → 실전 시나리오 검증(confirmHigh)
+//  · 낮게(1~2) → 역방향 문항 검증(confirmLow, 역채점)
+const BANK = {
+  routine: {
+    probe: "일주일 내내 같은 작업이 반복된다면, 셋째 날의 기분은 \u2018편안함\u2019에 가깝다.",
+    confirmHigh: "매일 200건의 우편물을 같은 순서로 분류하는 일도 몇 달간 꾸준히 할 수 있다.",
+    confirmLow: "같은 일이 이틀만 반복돼도 새로운 일이 하고 싶어진다.",
+  },
+  detail: {
+    probe: "남이 만든 표에서 합계가 안 맞으면 원인을 찾아야 직성이 풀린다.",
+    confirmHigh: "긴 명단에서 이름 하나가 중복된 것을 남들보다 먼저 발견하는 편이다.",
+    confirmLow: "서류의 사소한 오타는 일의 속도를 위해 그냥 넘어가는 편이다.",
+  },
+  people: {
+    probe: "먼저 말을 걸어야 하는 상황이 생겨도 크게 어렵지 않게 시작한다.",
+    confirmHigh: "화가 난 손님도 대화로 풀어낼 자신이 있다.",
+    confirmLow: "하루 종일 사람을 응대하고 나면 완전히 방전된다.",
+  },
+  energy: {
+    probe: "주말에 쉬는 방법으로 \u2018몸을 움직이는 활동\u2019을 고르는 편이다.",
+    confirmHigh: "무거운 짐을 옮기는 일이 섞여 있어도 몸 쓰는 일이 좋다.",
+    confirmLow: "두 시간 이상 서 있으면 능률이 눈에 띄게 떨어진다.",
+  },
+  learning: {
+    probe: "처음 보는 앱이나 기계도 설명서 없이 이것저것 눌러보며 익힌다.",
+    confirmHigh: "새 업무 규칙을 하루 만에 익혀서 남에게 알려준 적이 있다.",
+    confirmLow: "업무 방식이 바뀌면 적응하는 데 시간이 꽤 걸리는 편이다.",
+  },
+};
+function buildStage2(stage1Answers) {
+  const items = TRAITS.map(({ key, name }, idx) => {
+    const a = stage1Answers[idx];
+    const bank = BANK[key];
+    if (a == null || a === 3) return { t: key, q: bank.probe, rev: false, why: `${name} 답변이 중간이라 조금 더 물어봐요`, kind: "probe" };
+    if (a >= 4) return { t: key, q: bank.confirmHigh, rev: false, why: `${name}이(가) 높게 나와 실전 상황으로 확인해요`, kind: "high" };
+    return { t: key, q: bank.confirmLow, rev: true, why: `${name}이(가) 낮게 나와 반대 상황으로 확인해요`, kind: "low" };
+  });
+  // 애매한 축(probe)을 앞에 배치
+  return items.sort((x, y) => (x.kind === "probe" ? 0 : 1) - (y.kind === "probe" ? 0 : 1));
+}
+// 3단계: 고정 조건 3문항 + 상위 강점 2개 축에 맞춘 맞춤 조건 2문항
+const STAGE3_FIXED = [
+  { key: "time", q: "언제 일하고 싶으세요?", options: ["오전", "오후", "저녁", "무관"] },
+  { key: "term", q: "얼마나 일하실 계획인가요?", options: ["3개월 이상 장기", "단기·당일", "무관"] },
+  { key: "pay", q: "희망 시급은 어느 정도세요?", options: ["10,500원 이상", "11,000원 이상", "금액보다 적성 우선"] },
+];
+const ADAPTIVE_COND = {
+  people: { key: "svc", q: "응대는 어떤 방식이 편하세요?", options: ["대면 응대", "전화·채팅 응대", "무관"], whyName: "대인 응대" },
+  routine: { key: "pace", q: "일의 리듬은 어느 쪽이 좋으세요?", options: ["정해진 루틴", "매일 다른 업무", "무관"], whyName: "반복 내성" },
+  detail: { key: "mat", q: "어떤 걸 다루는 게 좋으세요?", options: ["숫자·서류", "물건·정리", "무관"], whyName: "꼼꼼함" },
+  energy: { key: "load", q: "몸 쓰는 강도는 어디까지 괜찮으세요?", options: ["가벼운 활동까지", "강한 체력전도 OK", "무관"], whyName: "활동 체력" },
+  learning: { key: "nov", q: "새로운 업무를 배우는 건 어떠세요?", options: ["배우는 게 좋다", "익숙한 일이 편하다", "무관"], whyName: "습득 속도" },
+};
+const PAY_MIN = { "10,500원 이상": 10500, "11,000원 이상": 11000, "금액보다 적성 우선": 0 };
+const SCALE = ["전혀 아니다", "아니다", "보통", "그렇다", "매우 그렇다"];
+const STAGES = [
+  { name: "기본 성향", sub: "나는 어떤 사람인가", color: C.worker, soft: C.workerSoft },
+  { name: "맞춤 심화", sub: "1단계 답변에 맞춰 문항이 달라져요", color: C.company, soft: C.companySoft },
+  { name: "맞춤 조건", sub: "나의 강점에 맞춘 조건 질문", color: C.local, soft: C.localSoft },
+];
+const WEEKLY_DONE = 128;
+const SAMPLE_N = 41;
+
+// ---------- 직무 데이터 ----------
+const JOBS = [
+  {
+    id: "confirm", title: "금융거래조회서 발송·회신 관리", org: "회계법인 감사지원팀", dong: "명일동",
+    req: { routine: 90, detail: 90, people: 40, energy: 15, learning: 55 },
+    cond: { time: "오전", term: "3개월 이상 장기" },
+    attrs: { svc: "전화·채팅 응대", pace: "정해진 루틴", mat: "숫자·서류", load: "가벼운 활동까지", nov: "익숙한 일이 편하다" },
+    payNum: 11500, pay: "시급 11,500원", tags: ["사무", "숙련 4주"], bossType: "owl",
+    note: "은행·증권사별 접수 규칙이 달라 거래처 파악에 약 1개월이 필요합니다. 반복 내성과 꼼꼼함이 높을수록 오래 근속합니다.",
+  },
+  {
+    id: "dataentry", title: "회계자료 데이터 입력", org: "세무·회계 사무소", dong: "천호동",
+    req: { routine: 95, detail: 80, people: 10, energy: 10, learning: 40 },
+    cond: { time: "오후", term: "3개월 이상 장기" },
+    attrs: { svc: "무관", pace: "정해진 루틴", mat: "숫자·서류", load: "가벼운 활동까지", nov: "익숙한 일이 편하다" },
+    payNum: 10500, pay: "시급 10,500원", tags: ["사무", "숙련 1주"], bossType: "beaver",
+    note: "전표·증빙을 정해진 양식에 입력합니다. 반복 내성이 핵심입니다.",
+  },
+  {
+    id: "cafe", title: "카페 바리스타", org: "고덕역 프랜차이즈 카페", dong: "고덕동",
+    req: { routine: 55, detail: 55, people: 80, energy: 75, learning: 60 },
+    cond: { time: "오전", term: "3개월 이상 장기" },
+    attrs: { svc: "대면 응대", pace: "정해진 루틴", mat: "물건·정리", load: "강한 체력전도 OK", nov: "배우는 게 좋다" },
+    payNum: 10300, pay: "시급 10,300원", tags: ["서비스", "숙련 2주"], bossType: "retriever",
+    note: "레시피 숙지와 손님 응대가 절반씩입니다. 대인 응대와 체력이 중요합니다.",
+  },
+  {
+    id: "logistics", title: "물류센터 피킹·패킹", org: "상일동 풀필먼트센터", dong: "상일동",
+    req: { routine: 75, detail: 50, people: 10, energy: 95, learning: 30 },
+    cond: { time: "저녁", term: "단기·당일" },
+    attrs: { svc: "무관", pace: "정해진 루틴", mat: "물건·정리", load: "강한 체력전도 OK", nov: "익숙한 일이 편하다" },
+    payNum: 13700, pay: "일급 110,000원", tags: ["물류", "숙련 3일"], bossType: "ant",
+    note: "체력이 곧 성과입니다. 활동 체력이 높은 분에게 만족도가 높습니다.",
+  },
+  {
+    id: "frontdesk", title: "학원 데스크·수납 보조", org: "명일동 중등 전문 학원", dong: "명일동",
+    req: { routine: 50, detail: 70, people: 85, energy: 35, learning: 65 },
+    cond: { time: "오후", term: "3개월 이상 장기" },
+    attrs: { svc: "대면 응대", pace: "매일 다른 업무", mat: "숫자·서류", load: "가벼운 활동까지", nov: "배우는 게 좋다" },
+    payNum: 10800, pay: "시급 10,800원", tags: ["교육", "숙련 2주"], bossType: "fox",
+    note: "학부모 응대와 수납 처리가 함께 있어 대인 응대와 꼼꼼함이 모두 필요합니다.",
+  },
+  {
+    id: "event", title: "행사·전시 운영 스태프", org: "성내동 이벤트 대행사", dong: "성내동",
+    req: { routine: 20, detail: 40, people: 90, energy: 90, learning: 70 },
+    cond: { time: "무관", term: "단기·당일" },
+    attrs: { svc: "대면 응대", pace: "매일 다른 업무", mat: "물건·정리", load: "강한 체력전도 OK", nov: "배우는 게 좋다" },
+    payNum: 15000, pay: "일급 120,000원", tags: ["행사", "당일 투입"], bossType: "parrot",
+    note: "매번 현장이 달라 변화를 즐기는 성향에게 맞습니다.",
+  },
+  {
+    id: "library", title: "도서관 자료 정리 보조", org: "암사동 구립 도서관", dong: "암사동",
+    req: { routine: 80, detail: 75, people: 30, energy: 45, learning: 35 },
+    cond: { time: "오전", term: "3개월 이상 장기" },
+    attrs: { svc: "무관", pace: "정해진 루틴", mat: "물건·정리", load: "가벼운 활동까지", nov: "익숙한 일이 편하다" },
+    payNum: 10200, pay: "시급 10,200원", tags: ["공공", "숙련 1주"], bossType: "turtle",
+    note: "청구기호 순 배열 등 규칙 기반 업무입니다. 조용히 몰입하는 성향에 적합합니다.",
+  },
+];
+
+// ---------- 지원자 ----------
+const APPLICANTS = [
+  { name: "김서연", age: 24, dong: "명일동", exp: "사무보조 8개월", traits: { routine: 88, detail: 92, people: 45, energy: 25, learning: 60 } },
+  { name: "박준호", age: 27, dong: "상일동", exp: "물류 6개월 · 카페 3개월", traits: { routine: 60, detail: 40, people: 55, energy: 95, learning: 45 } },
+  { name: "이지은", age: 22, dong: "고덕동", exp: "학원 데스크 1년", traits: { routine: 55, detail: 70, people: 90, energy: 50, learning: 75 } },
+  { name: "최민규", age: 30, dong: "천호동", exp: "데이터 입력 2년", traits: { routine: 95, detail: 85, people: 20, energy: 15, learning: 50 } },
+  { name: "정하늘", age: 25, dong: "성내동", exp: "행사 스태프 다수", traits: { routine: 25, detail: 35, people: 95, energy: 90, learning: 80 } },
+  { name: "오세림", age: 23, dong: "암사동", exp: "도서관 보조 5개월", traits: { routine: 82, detail: 78, people: 35, energy: 40, learning: 55 } },
+];
+
+// ---------- 매칭 로직 ----------
+function fitScore(user, req) {
+  let num = 0, den = 0;
+  TRAITS.forEach(({ key }) => {
+    const r = req[key], u = user[key];
+    const w = 0.4 + r / 100;
+    const gap = u < r ? (r - u) : (u - r) * 0.4;
+    num += gap * w; den += w;
+  });
+  return Math.min(99, Math.max(0, Math.round(100 - (num / den) * 1.6)));
+}
+function prefScore(prefs, cond) {
+  let hit = 0, tot = 0, matched = [];
+  ["time", "term"].forEach(key => {
+    const p = prefs[key];
+    if (!p) return;
+    tot += 1;
+    if (p === "무관" || cond[key] === "무관" || p === cond[key]) { hit += 1; if (p !== "무관") matched.push(p); }
+  });
+  return { score: tot ? Math.round((hit / tot) * 100) : 100, matched };
+}
+// 맞춤 조건(적응형 문항) 일치 시 +3점씩 (최대 +6)
+function adaptiveBonus(prefs, attrs) {
+  let bonus = 0; const matched = [];
+  ["svc", "pace", "mat", "load", "nov"].forEach(k => {
+    const p = prefs[k];
+    if (!p || p === "무관") return;
+    if (attrs[k] === p) { bonus += 3; matched.push(p); }
+  });
+  return { bonus, matched };
+}
+function payPenalty(prefs, payNum) {
+  const min = PAY_MIN[prefs.pay] || 0;
+  if (!min || payNum >= min) return 0;
+  return payNum >= min - 500 ? 8 : 15;
+}
+function totalScore(fit, walk, pref, penalty, compatBonus) {
+  return Math.max(0, Math.min(99, Math.round(fit * 0.5 + distScore(walk) * 0.3 + pref * 0.2 - penalty + compatBonus)));
+}
+function tenureMonths(score) {
+  return Math.max(2, Math.min(14, Math.round(2 + ((score - 45) / 55) * 12)));
+}
+function scoreColor(s) { return s >= 80 ? C.company : s >= 60 ? C.gold : C.warn; }
+
+// ---------- 공용 소품 ----------
+function Chip({ children, bg, color }) {
+  return <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 999, background: bg || "#EFF1EA", color: color || C.sub, fontWeight: 700, whiteSpace: "nowrap" }}>{children}</span>;
+}
+function ScoreDial({ score, label }) {
+  const col = scoreColor(score);
+  return (
+    <div style={{ textAlign: "center", minWidth: 72 }}>
+      <div style={{ width: 60, height: 60, borderRadius: "50%", margin: "0 auto", background: `conic-gradient(${col} ${score * 3.6}deg, #ECEEE7 0deg)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 46, height: 46, borderRadius: "50%", background: C.paper, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, color: col }}>{score}</div>
+      </div>
+      <div style={{ fontSize: 11, color: C.sub, marginTop: 4, fontWeight: 600 }}>{label}</div>
+    </div>
+  );
+}
+function FitGauge({ user, req, leftColor, rightColor }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700 }}>
+        <span style={{ color: leftColor }}>내 성향</span><span style={{ color: rightColor }}>직무 요구</span>
+      </div>
+      {TRAITS.map(({ key, name }) => (
+        <div key={key} style={{ display: "grid", gridTemplateColumns: "1fr 78px 1fr", alignItems: "center", gap: 6 }}>
+          <div style={{ width: "100%", height: 8, background: "#EFF1EA", borderRadius: 99, overflow: "hidden", transform: "scaleX(-1)" }}>
+            <div style={{ width: `${user[key]}%`, height: "100%", background: leftColor, borderRadius: 99 }} />
+          </div>
+          <div style={{ fontSize: 11.5, textAlign: "center", fontWeight: 600 }}>{name}</div>
+          <div style={{ width: "100%", height: 8, background: "#EFF1EA", borderRadius: 99, overflow: "hidden" }}>
+            <div style={{ width: `${req[key]}%`, height: "100%", background: rightColor, borderRadius: 99 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------- 메인 ----------
+function AlbaFitV7() {
+  const [mode, setMode] = useState("home");
+  const [myDong, setMyDong] = useState("명일동");
+  const [stage, setStage] = useState(0);
+  const [phase, setPhase] = useState("quiz");
+  const [qIdx, setQIdx] = useState(0);
+  const [likert, setLikert] = useState(Array(10).fill(null));
+  const [prefs, setPrefs] = useState({});
+  const [sortKey, setSortKey] = useState("total");
+  const [jobReq, setJobReq] = useState({ routine: 90, detail: 90, people: 40, energy: 15, learning: 55 });
+  const [jobTitle, setJobTitle] = useState("금융거래조회서 발송·회신 관리");
+  const [jobDong, setJobDong] = useState("명일동");
+  // 사장님 유형: 검사 or 직접 선택
+  const [bossType, setBossType] = useState("owl");
+  const [bossTab, setBossTab] = useState("quiz"); // quiz | manual
+  const [bossAnswers, setBossAnswers] = useState(Array(BOSS_QUIZ.length).fill(null));
+  const bossDone = bossAnswers.every(a => a != null);
+  const bossResult = useMemo(() => bossDone ? typeRank(bossProfileFrom(bossAnswers))[0] : null, [bossAnswers, bossDone]);
+  const effectiveBoss = bossTab === "quiz" && bossResult ? bossResult.id : bossType;
+
+  const resetTest = () => { setStage(0); setPhase("quiz"); setQIdx(0); setLikert(Array(10).fill(null)); setPrefs({}); };
+
+  // 2단계 문항은 1단계 답변으로부터 생성 (적응형)
+  const stage2Items = useMemo(() => buildStage2(likert.slice(0, 5)), [likert]);
+
+  const profile = useMemo(() => {
+    const sums = {}, cnts = {};
+    STAGE1.forEach((qu, i) => {
+      if (likert[i] == null) return;
+      sums[qu.t] = (sums[qu.t] || 0) + likert[i];
+      cnts[qu.t] = (cnts[qu.t] || 0) + 1;
+    });
+    stage2Items.forEach(qu => {
+      const gIdx = 5 + TRAIT_IDX[qu.t];
+      if (likert[gIdx] == null) return;
+      const val = qu.rev ? 6 - likert[gIdx] : likert[gIdx]; // 역문항은 역채점
+      sums[qu.t] = (sums[qu.t] || 0) + val;
+      cnts[qu.t] = (cnts[qu.t] || 0) + 1;
+    });
+    const p = {};
+    TRAITS.forEach(({ key }) => { p[key] = cnts[key] ? Math.round(((sums[key] / cnts[key]) - 1) / 4 * 100) : 50; });
+    return p;
+  }, [likert, stage2Items]);
+
+  // 3단계 문항: 고정 3 + 상위 강점 2개 축의 맞춤 조건 (2단계 완료 시점의 프로필 기반)
+  const stage3Items = useMemo(() => {
+    const top2 = TRAITS.map(t => ({ key: t.key, v: profile[t.key] })).sort((a, b) => b.v - a.v).slice(0, 2);
+    return [...STAGE3_FIXED, ...top2.map(t => ({ ...ADAPTIVE_COND[t.key], adaptive: true }))];
+  }, [profile]);
+
+  const myTypes = useMemo(() => typeRank(profile), [profile]);
+  const myTypeId = myTypes[0].id;
+
+  const rankedJobs = useMemo(() => {
+    const list = JOBS.map(j => {
+      const walk = walkMin(myDong, j.dong);
+      const fit = fitScore(profile, j.req);
+      const pf = prefScore(prefs, j.cond);
+      const ab = adaptiveBonus(prefs, j.attrs);
+      const pen = payPenalty(prefs, j.payNum);
+      const cp = compat(myTypeId, j.bossType);
+      const total = Math.max(0, Math.min(99, Math.round(fit * 0.5 + distScore(walk) * 0.3 + pf.score * 0.2 - pen + cp.bonus + ab.bonus)));
+      return { ...j, walk, fit, matched: [...pf.matched, ...ab.matched], pen, cp, ab, total };
+    });
+    if (sortKey === "fit") list.sort((a, b) => b.fit - a.fit);
+    else if (sortKey === "near") list.sort((a, b) => a.walk - b.walk);
+    else list.sort((a, b) => b.total - a.total);
+    return list;
+  }, [profile, prefs, myDong, sortKey, myTypeId]);
+
+  const rankedApplicants = useMemo(() =>
+    APPLICANTS.map(a => {
+      const walk = walkMin(jobDong, a.dong);
+      const fit = fitScore(a.traits, jobReq);
+      const type = typeRank(a.traits)[0];
+      const cp = compat(effectiveBoss, type.id);
+      return { ...a, walk, fit, type, cp, total: Math.max(0, Math.min(99, Math.round(fit * 0.65 + distScore(walk) * 0.35 + cp.bonus))) };
+    }).sort((a, b) => b.total - a.total),
+  [jobReq, jobDong, effectiveBoss]);
+
+  const shell = { minHeight: "100vh", background: C.bg, fontFamily: font, color: C.ink, display: "flex", flexDirection: "column", alignItems: "center" };
+  const card = { background: C.paper, border: `1px solid ${C.line}`, borderRadius: 16, padding: 20 };
+  const btn = (bg, color = "#fff") => ({ background: bg, color, border: "none", borderRadius: 12, padding: "13px 22px", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: font });
+
+  const css = `
+    @keyframes drift { 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(-30px,20px) scale(1.15)} 100%{transform:translate(0,0) scale(1)} }
+    @keyframes drift2 { 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(40px,-25px) scale(1.2)} 100%{transform:translate(0,0) scale(1)} }
+    @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    @keyframes popIn { 0%{opacity:0; transform:translateY(14px)} 100%{opacity:1; transform:translateY(0)} }
+    @keyframes pulseGlow { 0%,100%{box-shadow:0 0 0 0 rgba(255,111,30,.55)} 50%{box-shadow:0 0 0 14px rgba(255,111,30,0)} }
+    @keyframes shimmer { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    @keyframes wobble { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} }
+    .hero-line { animation: popIn .6s ease both; }
+    .hero-line2 { animation: popIn .6s .15s ease both; }
+    .hero-line3 { animation: popIn .6s .3s ease both; }
+    .cta-glow { animation: pulseGlow 2.2s infinite; }
+    .teaser-emoji { animation: wobble 2.4s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  `;
+
+  const DongPicker = ({ value, onChange, accent }) => (
+    <label style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.paper, border: `1.5px solid ${accent}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer" }}>
+      <span style={{ fontSize: 13 }}>📍</span>
+      <select value={value} onChange={e => onChange(e.target.value)} style={{ border: "none", background: "transparent", fontFamily: font, fontSize: 13.5, fontWeight: 800, color: accent, cursor: "pointer", outline: "none" }}>
+        {DONG_LIST.map(d => <option key={d} value={d}>{d}</option>)}
+      </select>
+    </label>
+  );
+
+  const Header = (
+    <div style={{ width: "100%", maxWidth: 880, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px 6px", gap: 10, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, cursor: "pointer" }} onClick={() => setMode("home")}>
+        <span style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1.2, lineHeight: 1 }}>
+          알바<span style={{ background: `linear-gradient(90deg, ${C.local}, ${C.worker})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>핏</span>
+        </span>
+        <span style={{ fontSize: 12, color: C.sub, fontWeight: 700 }}>우리 동네 적성 매칭</span>
+      </div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <DongPicker value={myDong} onChange={setMyDong} accent={C.local} />
+        {mode !== "home" && (
+          <button onClick={() => setMode("home")} style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 10, padding: "7px 14px", fontSize: 13, fontWeight: 600, color: C.sub, cursor: "pointer", fontFamily: font }}>처음으로</button>
+        )}
+      </div>
+    </div>
+  );
+
+  // ================= 홈 =================
+  if (mode === "home") {
+    const nearCnt = JOBS.filter(j => walkMin(myDong, j.dong) <= 15).length;
+    const ticker = JOBS.map(j => `📍${j.dong} ${j.title} · ${j.pay} · 도보 ${walkMin(myDong, j.dong)}분`).join("      ");
+    return (
+      <div style={shell}>
+        <style>{css}</style>
+        {Header}
+        <div style={{ width: "100%", maxWidth: 880, padding: "18px 20px 60px" }}>
+          <div style={{
+            borderRadius: 26, padding: "52px 34px 0", color: "#fff", position: "relative", overflow: "hidden",
+            background: "linear-gradient(135deg, #0D1220 0%, #141B33 45%, #241333 100%)",
+            backgroundSize: "200% 200%", animation: "shimmer 12s ease infinite",
+          }}>
+            <div style={{ position: "absolute", right: -60, top: -70, width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,111,30,.5), transparent 65%)", animation: "drift 9s ease-in-out infinite", filter: "blur(6px)" }} />
+            <div style={{ position: "absolute", left: -80, bottom: -60, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(46,86,232,.55), transparent 65%)", animation: "drift2 11s ease-in-out infinite", filter: "blur(8px)" }} />
+            <div style={{ position: "relative" }}>
+              <div className="hero-line" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.18)", borderRadius: 999, padding: "7px 16px", fontSize: 13, fontWeight: 800 }}>
+                📍 {myDong} · 동네 인증 알바 매칭 · 지금 도보 15분 내 <span style={{ color: C.gold }}>{nearCnt}건</span>
+              </div>
+              <h1 className="hero-line2" style={{ margin: "26px 0 14px", lineHeight: 1.06, letterSpacing: -2.5 }}>
+                <span style={{ display: "block", fontSize: "clamp(46px, 8vw, 76px)", fontWeight: 900, background: `linear-gradient(90deg, ${C.local}, #FFB35C)`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>걸어서 10분,</span>
+                <span style={{ display: "block", fontSize: "clamp(46px, 8vw, 76px)", fontWeight: 900, background: "linear-gradient(90deg, #7EA0FF, #B9CBFF)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>적성 90점.</span>
+              </h1>
+              <div className="hero-line3" style={{ fontSize: "clamp(17px, 2.6vw, 22px)", fontWeight: 800, marginBottom: 10 }}>
+                알바를 그만두는 이유는 둘뿐 — <span style={{ color: "#FF9A5C" }}>멀거나</span>, <span style={{ color: "#9FB6FF" }}>안 맞거나</span>.
+              </div>
+              <p className="hero-line3" style={{ fontSize: 14.5, color: "#B9BFCC", lineHeight: 1.75, maxWidth: 540, margin: "0 0 20px" }}>
+                답변에 따라 문항이 달라지는 <b style={{ color: "#fff" }}>맞춤형 적성 검사</b>로 나의 알바 유형을 확인하고,
+                걸어갈 수 있는 거리의 오래 다닐 알바를 핏 점수·사장님 궁합·예상 근속과 함께 받아보세요.
+              </p>
+              <div className="hero-line3" style={{ display: "flex", gap: 4, marginBottom: 22, fontSize: 26, flexWrap: "wrap" }}>
+                {CHARACTERS.map(c => <span key={c.id} title={c.name}>{c.emoji}</span>)}
+                <span style={{ fontSize: 12.5, color: "#9AA1B0", fontWeight: 700, alignSelf: "center", marginLeft: 8 }}>나는 8가지 유형 중 무엇일까?</span>
+              </div>
+              <div className="hero-line3" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 30 }}>
+                <button className="cta-glow" style={{ ...btn(C.local), fontSize: 17, padding: "16px 30px", borderRadius: 14 }}
+                  onClick={() => { setMode("worker"); resetTest(); }}>
+                  90초 만에 내 유형 확인 →
+                </button>
+                <button style={{ ...btn("rgba(255,255,255,.08)", "#fff"), fontSize: 16, padding: "16px 26px", borderRadius: 14, border: "1.5px solid rgba(255,255,255,.35)" }}
+                  onClick={() => setMode("company")}>
+                  동네 인재 채용하기
+                </button>
+              </div>
+              <div style={{ display: "flex", gap: 26, flexWrap: "wrap", paddingBottom: 26 }}>
+                {[["1개월", "평균 숙련 기간"], ["2.8배", "핏 80점+ 근속"], [`${WEEKLY_DONE}명`, "이번 주 강동구 검사 완료"]].map(([n, l]) => (
+                  <div key={l}>
+                    <div style={{ fontSize: 26, fontWeight: 900 }}>{n}</div>
+                    <div style={{ fontSize: 11.5, color: "#9AA1B0", fontWeight: 700 }}>{l}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ position: "relative", margin: "0 -34px", background: "rgba(0,0,0,.35)", borderTop: "1px solid rgba(255,255,255,.1)", padding: "11px 0", overflow: "hidden" }}>
+              <div style={{ display: "inline-block", whiteSpace: "nowrap", animation: "marquee 30s linear infinite", fontSize: 12.5, fontWeight: 700, color: "#D8DCE6" }}>
+                <span style={{ paddingRight: 60 }}>{ticker}</span><span style={{ paddingRight: 60 }}>{ticker}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 14 }}>
+            {STAGES.map((s, i) => (
+              <div key={s.name} style={{ ...card, borderTop: `4px solid ${s.color}` }}>
+                <Chip bg={s.soft} color={s.color}>{i + 1}단계 · 5문항</Chip>
+                <div style={{ fontSize: 16.5, fontWeight: 800, margin: "10px 0 4px" }}>{s.name}</div>
+                <div style={{ fontSize: 13, color: C.sub, lineHeight: 1.6 }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ================= 검사 =================
+  if (mode === "worker" && phase !== "result") {
+    const st = STAGES[stage];
+    const isChoice = stage === 2;
+    const items = stage === 0 ? STAGE1 : stage === 1 ? stage2Items : stage3Items;
+    const stageAnswered = isChoice
+      ? stage3Items.filter(({ key }) => prefs[key]).length
+      : stage === 0
+        ? STAGE1.filter((_, i) => likert[i] != null).length
+        : stage2Items.filter(qu => likert[5 + TRAIT_IDX[qu.t]] != null).length;
+    const stageDone = stageAnswered === items.length;
+
+    if (phase === "rest") {
+      const t1 = myTypes[0], t2 = myTypes[1];
+      const next = STAGES[stage + 1];
+      const blurPx = stage === 0 ? 7 : 3;
+      return (
+        <div style={shell}>
+          <style>{css}</style>
+          {Header}
+          <div style={{ width: "100%", maxWidth: 560, padding: "40px 20px 60px" }}>
+            <div style={{ ...card, textAlign: "center", padding: "34px 24px", animation: "popIn .5s ease both" }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: st.color, marginBottom: 12 }}>{stage + 1}단계 완료 ✓</div>
+              <div className="teaser-emoji" style={{ fontSize: 74, filter: `blur(${blurPx}px)`, marginBottom: 6, display: "inline-block" }}>{t1.emoji}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, marginBottom: 4 }}>
+                당신은 <span style={{ color: C.local }}>{t1.name}</span>에 가까워지고 있어요
+              </div>
+              <p style={{ fontSize: 13.5, color: C.sub, lineHeight: 1.7, margin: "0 0 14px" }}>
+                하지만 아직 몰라요 — 남은 답변에 따라 <b>{t2.emoji} {t2.name}</b>(으)로 바뀔 수도 있습니다.<br />
+                {stage === 0
+                  ? "2단계 문항은 방금 하신 답변에 맞춰 새로 구성됐어요."
+                  : "마지막 단계는 당신의 강점에 맞춘 조건 질문입니다!"}
+              </p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 16 }}>
+                <Chip bg={C.localSoft} color={C.local}>벌써 {stage === 0 ? "30초" : "1분"} 투자하셨어요 — 답변이 아까우니까요 😉</Chip>
+                <Chip>이번 주 강동구 {WEEKLY_DONE}명 검사 완료</Chip>
+              </div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: next.soft, borderRadius: 12, padding: "10px 16px", marginBottom: 18 }}>
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: next.color }}>다음 · {stage + 2}단계 {next.name}</span>
+                <span style={{ fontSize: 12, color: C.sub }}>{stage === 0 ? "맞춤 5문항 · 약 40초" : "마지막 5문항 · 30초면 끝! ⚡"}</span>
+              </div>
+              <div>
+                <button style={{ ...btn(next.color), fontSize: 16, padding: "14px 34px" }}
+                  onClick={() => { setStage(stage + 1); setPhase("quiz"); setQIdx(0); }}>
+                  계속하기 →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const qu = items[qIdx];
+    const advance = () => {
+      if (qIdx < items.length - 1) setQIdx(qIdx + 1);
+      else if (stage < 2) setPhase("rest");
+      else setPhase("result");
+    };
+    const stepper = [
+      { label: "동네 인증", state: "done", color: C.local },
+      ...STAGES.map((s, i) => ({ label: `${i + 1}단계 ${s.name}`, state: i < stage ? "done" : i === stage ? "now" : "todo", color: s.color, soft: s.soft, prog: i === stage ? stageAnswered / items.length : 0 })),
+    ];
+    return (
+      <div style={shell}>
+        <style>{css}</style>
+        {Header}
+        <div style={{ width: "100%", maxWidth: 620, padding: "16px 20px 60px" }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+            {stepper.map(s => (
+              <div key={s.label} style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ height: 6, borderRadius: 99, background: s.state === "done" ? s.color : s.state === "now" ? s.soft : "#E9EBE3", overflow: "hidden" }}>
+                  {s.state === "now" && <div style={{ width: `${s.prog * 100}%`, height: "100%", background: s.color, transition: "width .25s" }} />}
+                </div>
+                <div style={{ fontSize: 10.5, fontWeight: 800, marginTop: 5, color: s.state === "now" ? s.color : s.state === "done" ? C.ink : "#B7BCC6" }}>
+                  {s.label}{s.state === "done" ? " ✓" : ""}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ ...card, animation: "popIn .35s ease both" }} key={`${stage}-${qIdx}`}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, flexWrap: "wrap", gap: 6 }}>
+              <Chip bg={st.soft} color={st.color}>{stage + 1}단계 · {st.name}</Chip>
+              <span style={{ fontSize: 12, fontWeight: 700, color: isChoice ? C.local : C.sub }}>
+                {isChoice ? `마지막 단계 ⚡ ${qIdx + 1} / ${items.length}` : `${qIdx + 1} / ${items.length}`}
+              </span>
+            </div>
+            {/* 적응형 문항인 이유 — 개인화가 느껴지는 순간 */}
+            {stage === 1 && qu.why && (
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: C.company, background: C.companySoft, display: "inline-block", borderRadius: 8, padding: "4px 10px", marginBottom: 8 }}>
+                🎯 맞춤 문항 · {qu.why}
+              </div>
+            )}
+            {stage === 2 && qu.adaptive && (
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: C.local, background: C.localSoft, display: "inline-block", borderRadius: 8, padding: "4px 10px", marginBottom: 8 }}>
+                🎯 {qu.whyName}이(가) 강점인 당신께 드리는 질문
+              </div>
+            )}
+            <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.5, marginBottom: 20 }}>{qu.q}</div>
+            {isChoice ? (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {qu.options.map(op => {
+                  const on = prefs[qu.key] === op;
+                  return (
+                    <button key={op} onClick={() => { setPrefs({ ...prefs, [qu.key]: op }); setTimeout(advance, 180); }}
+                      style={{ padding: "13px 20px", borderRadius: 14, cursor: "pointer", fontFamily: font, fontSize: 15, fontWeight: on ? 800 : 600, border: `1.5px solid ${on ? st.color : C.line}`, background: on ? st.soft : C.paper, color: on ? st.color : C.ink }}>
+                      {op}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {SCALE.map((label, i) => {
+                  const val = i + 1;
+                  const gIdx = stage === 0 ? qIdx : 5 + TRAIT_IDX[qu.t];
+                  const on = likert[gIdx] === val;
+                  return (
+                    <button key={label} onClick={() => {
+                      const next = [...likert]; next[gIdx] = val; setLikert(next);
+                      setTimeout(advance, 160);
+                    }} style={{ textAlign: "left", padding: "12px 16px", borderRadius: 12, cursor: "pointer", fontFamily: font, fontSize: 14.5, fontWeight: on ? 800 : 600, border: `1.5px solid ${on ? st.color : C.line}`, background: on ? st.soft : C.paper, color: on ? st.color : C.ink }}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14 }}>
+            <button disabled={qIdx === 0} onClick={() => setQIdx(qIdx - 1)}
+              style={{ ...btn("transparent", C.sub), border: `1px solid ${C.line}`, opacity: qIdx === 0 ? 0.4 : 1, padding: "10px 18px", fontSize: 13.5 }}>이전</button>
+            {stageDone && qIdx === items.length - 1 && (
+              <button style={{ ...btn(st.color), padding: "10px 20px", fontSize: 13.5 }}
+                onClick={() => (stage < 2 ? setPhase("rest") : setPhase("result"))}>
+                {stage < 2 ? "다음 단계 →" : "내 캐릭터 확인 →"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ================= 결과 =================
+  if (mode === "worker" && phase === "result") {
+    const me = myTypes[0];
+    const goodMates = me.goodWith.map(id => CHAR_BY_ID[id]);
+    const hardMate = me.hardWith ? CHAR_BY_ID[me.hardWith] : null;
+    const sortTabs = [["total", "동네 추천순"], ["fit", "적성 핏순"], ["near", "가까운 순"]];
+    return (
+      <div style={shell}>
+        <style>{css}</style>
+        {Header}
+        <div style={{ width: "100%", maxWidth: 880, padding: "16px 20px 60px" }}>
+          <div style={{
+            borderRadius: 22, padding: "30px 26px", color: "#fff", marginBottom: 14, position: "relative", overflow: "hidden",
+            background: "linear-gradient(135deg, #0D1220, #1C1533)", animation: "popIn .5s ease both",
+          }}>
+            <div style={{ position: "absolute", right: -50, top: -50, width: 260, height: 260, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,111,30,.4), transparent 65%)" }} />
+            <div style={{ position: "relative", display: "flex", gap: 22, flexWrap: "wrap", alignItems: "center" }}>
+              <div style={{ fontSize: 96, lineHeight: 1 }}>{me.emoji}</div>
+              <div style={{ flex: "1 1 280px" }}>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: C.gold }}>📍 {myDong} · 나의 알바 유형</div>
+                <div style={{ fontSize: 30, fontWeight: 900, margin: "4px 0 2px" }}>{me.name} <span style={{ fontSize: 16, fontWeight: 700, color: "#B9BFCC" }}>— {me.title}</span></div>
+                <div style={{ fontSize: 14.5, fontStyle: "italic", color: "#FFB35C", margin: "6px 0 10px" }}>{me.line}</div>
+                <p style={{ fontSize: 13.5, color: "#C6CBD4", lineHeight: 1.65, margin: "0 0 12px" }}>{me.desc}</p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                  <Chip bg="rgba(255,255,255,.14)" color="#FFE0A8">{me.name} 일치도 {me.matchPct}%</Chip>
+                  <Chip bg="rgba(14,155,108,.25)" color="#5FD9AE">👍 최고의 알바 · {me.best}</Chip>
+                  <Chip bg="rgba(217,119,43,.22)" color="#FFB07A">💀 최악의 알바 · {me.worst}</Chip>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <Chip bg="rgba(46,86,232,.25)" color="#9FB6FF">💚 잘 맞는 사장님 · {goodMates.map(g => `${g.emoji}${g.name}`).join(" ")}</Chip>
+                  {hardMate && <Chip bg="rgba(255,255,255,.1)" color="#C6CBD4">⚡ 티격태격 · {hardMate.emoji}{hardMate.name}</Chip>}
+                </div>
+                <div style={{ fontSize: 10.5, color: "#8890A0", marginTop: 10 }}>
+                  * 일치도는 검사 척도 기준 계산값입니다. 지역 퍼센타일은 {myDong} 표본 100명 달성 시 공개됩니다 (현재 {SAMPLE_N}명 · 베타)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ ...card, marginBottom: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: C.worker, marginBottom: 10 }}>성향 상세 · 희망 조건</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
+              {TRAITS.map(({ key, name, desc }) => (
+                <div key={key} style={{ flex: "1 1 140px", background: "#F8F9F5", borderRadius: 12, padding: "12px 14px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span style={{ fontSize: 13, fontWeight: 800 }}>{name}</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: C.worker }}>{profile[key]}</span>
+                  </div>
+                  <div style={{ height: 6, background: "#E9EBE3", borderRadius: 99, margin: "8px 0 6px", overflow: "hidden" }}>
+                    <div style={{ width: `${profile[key]}%`, height: "100%", background: C.worker }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: C.sub }}>{desc}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {stage3Items.map(({ key }) => prefs[key] && prefs[key] !== "무관" && prefs[key] !== "금액보다 적성 우선" && (
+                <Chip key={key} bg={C.localSoft} color={C.local}>희망 · {prefs[key]}</Chip>
+              ))}
+              <button onClick={resetTest} style={{ ...btn("transparent", C.sub), border: `1px solid ${C.line}`, padding: "5px 12px", fontSize: 12, borderRadius: 999 }}>다시 검사</button>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "6px 4px 10px", flexWrap: "wrap", gap: 8 }}>
+            <div style={{ fontSize: 15, fontWeight: 800 }}>{me.emoji} {me.name}에게 맞는 공고</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {sortTabs.map(([k, label]) => (
+                <button key={k} onClick={() => setSortKey(k)} style={{ padding: "6px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 700, fontFamily: font, cursor: "pointer", border: `1.5px solid ${sortKey === k ? C.local : C.line}`, background: sortKey === k ? C.localSoft : C.paper, color: sortKey === k ? C.local : C.sub }}>{label}</button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {rankedJobs.map((j, i) => {
+              const dt = distTone(j.walk);
+              const boss = CHAR_BY_ID[j.bossType];
+              return (
+                <div key={j.id} style={{ ...card, borderLeft: i === 0 ? `4px solid ${C.local}` : `1px solid ${C.line}` }}>
+                  <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <ScoreDial score={j.total} label="종합" />
+                      <ScoreDial score={j.fit} label="적성 핏" />
+                    </div>
+                    <div style={{ flex: "1 1 260px" }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 16.5, fontWeight: 800 }}>{j.title}</span>
+                        {i === 0 && <Chip bg={C.localSoft} color={C.local}>우리 동네 최적</Chip>}
+                      </div>
+                      <div style={{ fontSize: 12.5, color: C.sub, margin: "3px 0 8px" }}>
+                        {j.org} · 📍 {j.dong} · {j.pay} · 사장님 {boss.emoji}{boss.name}
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                        <Chip bg={dt.bg} color={dt.color}>{dt.label}</Chip>
+                        {j.cp.label && <Chip bg={j.cp.bonus > 0 ? C.companySoft : "#FDEDE7"} color={j.cp.bonus > 0 ? C.company : C.warn}>사장님 {j.cp.label}</Chip>}
+                        {j.matched.map(m => <Chip key={m} bg={C.workerSoft} color={C.worker}>✓ {m}</Chip>)}
+                        {j.ab.bonus > 0 && <Chip bg={C.localSoft} color={C.local}>맞춤 조건 +{j.ab.bonus}점</Chip>}
+                        {j.pen > 0 && <Chip bg="#FDEDE7" color={C.warn}>희망 시급 미달 −{j.pen}점</Chip>}
+                        {j.tags.map(t => <Chip key={t}>{t}</Chip>)}
+                        <Chip bg={C.companySoft} color={C.company}>예상 근속 {tenureMonths(j.total)}개월</Chip>
+                      </div>
+                      <FitGauge user={profile} req={j.req} leftColor={C.worker} rightColor="#9AA3B0" />
+                      <div style={{ fontSize: 12.5, color: C.sub, lineHeight: 1.6, marginTop: 10, background: "#F8F9F5", borderRadius: 10, padding: "10px 12px" }}>{j.note}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ================= 기업 모드 =================
+  const bossChar = CHAR_BY_ID[effectiveBoss];
+  return (
+    <div style={shell}>
+      <style>{css}</style>
+      {Header}
+      <div style={{ width: "100%", maxWidth: 880, padding: "16px 20px 60px" }}>
+        <div style={{ ...card, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: C.company }}>공고 설정</div>
+          <div style={{ fontSize: 19, fontWeight: 900, margin: "6px 0 4px" }}>어느 동네에서, 어떤 성향이 필요한가요</div>
+          <p style={{ fontSize: 12.5, color: C.sub, margin: "0 0 14px" }}>근무지 동네·필요 성향·사장님 유형을 설정하면 잘 맞는 지원자부터 정렬됩니다.</p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 16 }}>
+            <input value={jobTitle} onChange={e => setJobTitle(e.target.value)} style={{ flex: "1 1 260px", boxSizing: "border-box", padding: "11px 14px", borderRadius: 10, border: `1.5px solid ${C.line}`, fontSize: 14.5, fontWeight: 700, fontFamily: font, outline: "none" }} />
+            <DongPicker value={jobDong} onChange={setJobDong} accent={C.company} />
+          </div>
+
+          {/* ----- 사장님 유형: 30초 검사(기본) / 직접 선택 ----- */}
+          <div style={{ background: "#F8F9F5", borderRadius: 14, padding: 16, marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 800 }}>사장님(팀장)은 어떤 유형이세요? <span style={{ fontWeight: 600, color: C.sub, fontSize: 12 }}>— 궁합 ±5점 반영 (참고 지표)</span></div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {[["quiz", "30초 검사 (추천)"], ["manual", "직접 선택"]].map(([k, label]) => (
+                  <button key={k} onClick={() => setBossTab(k)} style={{
+                    padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, fontFamily: font, cursor: "pointer",
+                    border: `1.5px solid ${bossTab === k ? C.company : C.line}`,
+                    background: bossTab === k ? C.companySoft : C.paper, color: bossTab === k ? C.company : C.sub,
+                  }}>{label}</button>
+                ))}
+              </div>
+            </div>
+
+            {bossTab === "quiz" ? (
+              <div>
+                <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 10 }}>
+                  둘 다 좋은 답입니다 — 더 솔직한 쪽을 고르세요. 정답도 미화도 없습니다.
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {BOSS_QUIZ.map((qz, i) => (
+                    <div key={qz.q} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{i + 1}. {qz.q}</div>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {["a", "b"].map(side => {
+                          const on = bossAnswers[i] === side;
+                          return (
+                            <button key={side} onClick={() => {
+                              const next = [...bossAnswers]; next[i] = side; setBossAnswers(next);
+                            }} style={{
+                              flex: "1 1 200px", textAlign: "left", padding: "9px 13px", borderRadius: 10, cursor: "pointer",
+                              fontFamily: font, fontSize: 12.5, fontWeight: on ? 800 : 600,
+                              border: `1.5px solid ${on ? C.company : C.line}`,
+                              background: on ? C.companySoft : C.paper, color: on ? C.company : C.ink,
+                            }}>{qz[side]}</button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {bossDone && bossResult && (
+                  <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10, background: C.companySoft, borderRadius: 12, padding: "10px 14px", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 30 }}>{bossResult.emoji}</span>
+                    <div>
+                      <div style={{ fontSize: 14.5, fontWeight: 900, color: C.company }}>검사 결과 · {bossResult.name} <span style={{ fontWeight: 700, fontSize: 12 }}>(일치도 {bossResult.matchPct}%)</span></div>
+                      <div style={{ fontSize: 12, color: C.sub }}>{bossResult.title} — 아래 지원자 순위에 궁합이 반영되었습니다.</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {CHARACTERS.map(c => {
+                  const on = bossType === c.id;
+                  return (
+                    <button key={c.id} onClick={() => setBossType(c.id)} style={{
+                      padding: "8px 13px", borderRadius: 999, cursor: "pointer", fontFamily: font, fontSize: 13,
+                      fontWeight: on ? 800 : 600, border: `1.5px solid ${on ? C.company : C.line}`,
+                      background: on ? C.companySoft : C.paper, color: on ? C.company : C.ink,
+                    }}>{c.emoji} {c.name}</button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px 22px" }}>
+            {TRAITS.map(({ key, name }) => (
+              <div key={key}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>
+                  <span>{name}</span><span style={{ color: C.company }}>{jobReq[key]}</span>
+                </div>
+                <input type="range" min={0} max={100} value={jobReq[key]}
+                  onChange={e => setJobReq({ ...jobReq, [key]: Number(e.target.value) })}
+                  style={{ width: "100%", accentColor: C.company }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ fontSize: 15, fontWeight: 800, margin: "6px 4px 10px" }}>
+          「{jobTitle}」 · 📍 {jobDong} · 사장님 {bossChar.emoji}{bossChar.name} 기준 지원자
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {rankedApplicants.map((a, i) => {
+            const dt = distTone(a.walk);
+            return (
+              <div key={a.name} style={{ ...card, borderLeft: i === 0 ? `4px solid ${C.company}` : `1px solid ${C.line}` }}>
+                <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <ScoreDial score={a.total} label="종합" />
+                    <ScoreDial score={a.fit} label="적성 핏" />
+                  </div>
+                  <div style={{ flex: "1 1 260px" }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 16, fontWeight: 800 }}>{a.type.emoji} {a.name}</span>
+                      <Chip bg={C.workerSoft} color={C.worker}>{a.type.name}</Chip>
+                      <span style={{ fontSize: 12.5, color: C.sub }}>{a.age}세 · 📍 {a.dong} · {a.exp}</span>
+                      {i === 0 && <Chip bg={C.companySoft} color={C.company}>추천 1순위</Chip>}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0 10px" }}>
+                      <Chip bg={dt.bg} color={dt.color}>{dt.label}</Chip>
+                      {a.cp.label && <Chip bg={a.cp.bonus > 0 ? C.companySoft : "#FDEDE7"} color={a.cp.bonus > 0 ? C.company : C.warn}>{a.cp.label}</Chip>}
+                      <Chip bg={C.companySoft} color={C.company}>예상 근속 {tenureMonths(a.total)}개월</Chip>
+                      {a.total >= 80 && <Chip bg={C.workerSoft} color={C.worker}>숙련 투자 회수 가능</Chip>}
+                      {a.total < 60 && <Chip>조기 이탈 위험</Chip>}
+                    </div>
+                    <FitGauge user={a.traits} req={jobReq} leftColor={C.company} rightColor="#9AA3B0" />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<AlbaFitV7 />);
+
+</script>
+</body>
+</html>
