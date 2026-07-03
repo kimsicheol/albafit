@@ -192,96 +192,163 @@ function bossProfileFrom(answers) {
 
 // ---------- 3단계 검사 ----------
 // ===== 스토리형 상황판단 검사 (SJT) =====
-// 리커트 자기보고는 미화가 가능하다. 대신 '어느 알바의 일주일' 이야기 속 선택으로
-// 측정 항목을 숨긴다. 모든 선택지는 똑같이 그럴듯하며 정답이 없다 — 자기도 모르게 성향이 드러난다.
-const STORY = [
-  {
-    scene: "🌅", title: "월요일 · 첫 출근",
-    text: "첫 출근 날, 팀장이 자리 두 개를 보여주며 말합니다.\n\u201C하나는 매일 같은 시간에 같은 서류를 정리하는 자리 — 대신 아무도 간섭 안 해요. 다른 하나는 매일 미션이 바뀌는 자리 — 뭐가 올지는 저도 몰라요.\u201D",
-    options: [
-      { label: "간섭 없는 내 페이스가 좋다. 서류 정리 자리로.", eff: { routine: 13, people: -4 } },
-      { label: "뭐가 올지 모르는 미션 자리. 그게 재밌지.", eff: { routine: -12, learning: 8, energy: 4 } },
-    ],
-  },
-  {
-    scene: "🖨️", title: "화요일 · 복사기 옆의 보고서",
-    text: "복사기 앞에 누군가 두고 간 매출 보고서 한 장. 지나치려는데… 합계 숫자가 어딘가 이상합니다.",
-    options: [
-      { label: "펜을 들고 어디가 틀렸는지 찾기 시작한다.", eff: { detail: 13, routine: 3 } },
-      { label: "내 서류가 아니다. 제자리에 두고 간다.", eff: { detail: -10, energy: 3 } },
-      { label: "담당자 자리에 \u2018합계 한번 확인해보세요\u2019 쪽지를 남긴다.", eff: { detail: 4, people: 6 } },
-    ],
-  },
-  {
-    scene: "🛗", title: "화요일 오후 · 엘리베이터",
-    text: "처음 보는 직원과 단둘이 엘리베이터에 탔습니다. 20층까지 올라가는 40초.",
-    options: [
-      { label: "먼저 말을 건다. \u201C몇 팀이세요? 저 오늘 왔어요.\u201D", eff: { people: 13 } },
-      { label: "자연스럽게 폰을 꺼내 본다.", eff: { people: -11, detail: 3 } },
-      { label: "가볍게 눈인사만 하고 층수 표시를 본다.", eff: { people: -3, routine: 4 } },
-    ],
-  },
-  {
-    scene: "🍱", title: "수요일 · 점심시간 1시간",
-    text: "오전 업무가 끝났습니다. 온전히 내 것인 한 시간, 당신의 선택은?",
-    options: [
-      { label: "밖에 나가 한 바퀴 걷는다. 몸이 근질근질하다.", eff: { energy: 12 } },
-      { label: "자리에서 웹툰 보며 충전. 오후를 위해 에너지를 아낀다.", eff: { energy: -11, routine: 3 } },
-      { label: "빨리 먹고 남는 시간에 쪽잠. 컨디션이 우선이다.", eff: { energy: -5, routine: 2 } },
-    ],
-  },
-  {
-    scene: "💻", title: "수요일 오후 · 새 프로그램",
-    text: "회사가 새 재고 프로그램을 도입했습니다. 책상 위에 200쪽짜리 매뉴얼이 놓여 있습니다.",
-    options: [
-      { label: "매뉴얼은 덮어두고 일단 이것저것 눌러본다.", eff: { learning: 13, detail: -4 } },
-      { label: "목차부터 정독한다. 순서대로 가는 게 확실하다.", eff: { learning: 3, detail: 9, routine: 6 } },
-      { label: "옆자리가 먼저 익히면 어깨너머로 배운다.", eff: { learning: -11, people: 5 } },
-    ],
-  },
-  {
-    scene: "📦", title: "목요일 · 같은 작업 4일째",
-    text: "나흘째 같은 소분 작업입니다. 오후 3시, 지금 당신의 상태는—",
-    options: [
-      { label: "속도가 붙어서 어제 기록을 깨는 중이다.", eff: { routine: 13, energy: 4 } },
-      { label: "시계만 본다. 내일은 다른 일을 시켜달라고 해야지.", eff: { routine: -13 } },
-      { label: "이어폰 끼고 무념무상. 이 정도면 할 만하다.", eff: { routine: 6, people: -3 } },
-    ],
-  },
-  {
-    scene: "📞", title: "금요일 · 진상 전화",
-    text: "수화기 너머에서 고객이 다짜고짜 소리를 지릅니다. 주문이 잘못 왔다고, 당장 책임지라고.",
-    options: [
-      { label: "일단 끝까지 듣는다. 화가 가라앉으면 풀 수 있다.", eff: { people: 13 } },
-      { label: "규정대로 교환 접수를 처리하고 신속하게 마무리한다.", eff: { people: -4, detail: 7, routine: 7 } },
-      { label: "\u201C담당자 연결해드리겠습니다\u201D — 선배에게 넘긴다.", eff: { people: -10, energy: -3 } },
-    ],
-  },
-  {
-    scene: "🏗️", title: "금요일 오후 · 창고 지원",
-    text: "창고 정리에 지원 요청이 왔습니다. 무거운 박스 100개 나르기와 재고 명단 작성 — 둘이서 역할을 나눠야 합니다.",
-    options: [
-      { label: "박스는 내가 나른다. 몸 쓰는 쪽이 낫다.", eff: { energy: 13 } },
-      { label: "명단 작성을 맡는다. 숫자는 정확해야 하니까.", eff: { energy: -9, detail: 8 } },
-    ],
-  },
-  {
-    scene: "🧾", title: "토요일 특근 · 3,000원의 미스터리",
-    text: "퇴근 10분 전, 정산 엑셀의 합계가 3,000원 안 맞습니다. 아무도 눈치채지 못했습니다.",
-    options: [
-      { label: "원인을 찾을 때까지 못 일어난다.", eff: { detail: 12, routine: 4 } },
-      { label: "메모를 남기고 퇴근한다. 월요일의 내가 해결할 것.", eff: { detail: -11 } },
-      { label: "검색해서 검증 함수를 새로 만들어 돌려본다.", eff: { learning: 11, detail: 5 } },
-    ],
-  },
-  {
-    scene: "🌙", title: "일요일 밤 · 팀장의 메시지",
-    text: "\u201C다음 주부터 새 지점 오픈 멤버로 갈래요? 아니면 본점에 남아서 지금 업무의 달인이 될래요?\u201D",
-    options: [
-      { label: "새 지점. 처음부터 세팅하는 걸 해보고 싶다.", eff: { learning: 12, routine: -6 } },
-      { label: "본점. 지금 일을 완벽하게 만드는 쪽이 좋다.", eff: { routine: 11, learning: -5, detail: 4 } },
-    ],
-  },
+// 리커트 자기보고는 미화가 가능하다. 대신 '어느 알바의 일주일' 이야기 속 선택으로 측정 항목을 숨긴다.
+// [문항 뱅크] 슬롯마다 변형 장면을 두고 접속(시드)마다 로테이션 — 단, 슬롯의 측정 축·효과 크기는 고정(블루프린트).
+const STORY_POOL = [
+  [ // 슬롯1 · routine
+    { scene: "🌅", grad: ["#FFD9A0", "#FF9A5C"], title: "월요일 · 첫 출근",
+      text: "첫 출근 날, 팀장이 자리 두 개를 보여주며 말합니다.\n“하나는 매일 같은 시간에 같은 서류를 정리하는 자리 — 대신 아무도 간섭 안 해요. 다른 하나는 매일 미션이 바뀌는 자리 — 뭐가 올지는 저도 몰라요.”",
+      options: [
+        { label: "간섭 없는 내 페이스가 좋다. 서류 정리 자리로.", eff: { routine: 13, people: -4 } },
+        { label: "뭐가 올지 모르는 미션 자리. 그게 재밌지.", eff: { routine: -12, learning: 8, energy: 4 } },
+      ] },
+    { scene: "🏪", grad: ["#FFD9A0", "#FF9A5C"], title: "월요일 · 편의점 점장의 제안",
+      text: "점장이 묻습니다.\n“매일 같은 시간에 발주·진열하는 루틴 담당 할래요, 아니면 매주 바뀌는 이벤트 매대 담당 할래요?”",
+      options: [
+        { label: "발주·진열 루틴 담당. 매일 같은 흐름이 편하다.", eff: { routine: 13, people: -4 } },
+        { label: "이벤트 매대. 매주 새로 짜는 게 재밌다.", eff: { routine: -12, learning: 8, energy: 4 } },
+      ] },
+  ],
+  [ // 슬롯2 · detail
+    { scene: "🖨️", grad: ["#C7D6FF", "#7EA0FF"], title: "화요일 · 복사기 옆의 보고서",
+      text: "복사기 앞에 누군가 두고 간 매출 보고서 한 장. 지나치려는데… 합계 숫자가 어딘가 이상합니다.",
+      options: [
+        { label: "펜을 들고 어디가 틀렸는지 찾기 시작한다.", eff: { detail: 13, routine: 3 } },
+        { label: "내 서류가 아니다. 제자리에 두고 간다.", eff: { detail: -10, energy: 3 } },
+        { label: "담당자 자리에 ‘합계 한번 확인해보세요’ 쪽지를 남긴다.", eff: { detail: 4, people: 6 } },
+      ] },
+    { scene: "💰", grad: ["#C7D6FF", "#7EA0FF"], title: "화요일 · 시재 500원의 행방",
+      text: "마감 정산 중, 포스기 시재가 딱 500원 안 맞습니다. 아무도 모릅니다.",
+      options: [
+        { label: "영수증을 처음부터 다시 대조한다. 원인을 찾아야 한다.", eff: { detail: 13, routine: 3 } },
+        { label: "내 돈 500원 넣고 맞춘다. 이 시간이 더 아깝다.", eff: { detail: -10, energy: 3 } },
+        { label: "인수인계 노트에 상황을 적어 다음 조에 알린다.", eff: { detail: 4, people: 6 } },
+      ] },
+  ],
+  [ // 슬롯3 · people
+    { scene: "🛗", grad: ["#D6F2E3", "#5FD9AE"], title: "화요일 오후 · 엘리베이터",
+      text: "처음 보는 직원과 단둘이 엘리베이터에 탔습니다. 20층까지 올라가는 40초.",
+      options: [
+        { label: "먼저 말을 건다. “몇 팀이세요? 저 오늘 왔어요.”", eff: { people: 13 } },
+        { label: "자연스럽게 폰을 꺼내 본다.", eff: { people: -11, detail: 3 } },
+        { label: "가볍게 눈인사만 하고 층수 표시를 본다.", eff: { people: -3, routine: 4 } },
+      ] },
+    { scene: "🍙", grad: ["#D6F2E3", "#5FD9AE"], title: "화요일 오후 · 휴게실",
+      text: "휴게실에 들어서니 다른 팀 알바생이 혼자 밥을 먹고 있습니다. 자리는 그 옆뿐입니다.",
+      options: [
+        { label: "옆에 앉아 말을 건다. “여기 김밥 맛있죠?”", eff: { people: 13 } },
+        { label: "간단히 목례하고 서서 폰을 본다.", eff: { people: -11, detail: 3 } },
+        { label: "조용히 옆에 앉아 각자 식사한다.", eff: { people: -3, routine: 4 } },
+      ] },
+  ],
+  [ // 슬롯4 · energy
+    { scene: "🍱", grad: ["#FFE9B8", "#F2B441"], title: "수요일 · 점심시간 1시간",
+      text: "오전 업무가 끝났습니다. 온전히 내 것인 한 시간, 당신의 선택은?",
+      options: [
+        { label: "밖에 나가 한 바퀴 걷는다. 몸이 근질근질하다.", eff: { energy: 12 } },
+        { label: "자리에서 웹툰 보며 충전. 오후를 위해 에너지를 아낀다.", eff: { energy: -11, routine: 3 } },
+        { label: "빨리 먹고 남는 시간에 쪽잠. 컨디션이 우선이다.", eff: { energy: -5, routine: 2 } },
+      ] },
+    { scene: "⏰", grad: ["#FFE9B8", "#F2B441"], title: "수요일 · 비어버린 30분",
+      text: "오전 일이 일찍 끝나 30분이 붕 떴습니다. 팀장은 자리에 없습니다.",
+      options: [
+        { label: "창고 정리를 자원한다. 몸이 움직여야 시간이 간다.", eff: { energy: 12 } },
+        { label: "자리에서 재고표를 미리 정리해 둔다.", eff: { energy: -11, routine: 3 } },
+        { label: "커피 한 잔 내리고 잠시 멍때린다.", eff: { energy: -5, routine: 2 } },
+      ] },
+  ],
+  [ // 슬롯5 · learning
+    { scene: "💻", grad: ["#E4D9FF", "#A88BFF"], title: "수요일 오후 · 새 프로그램",
+      text: "회사가 새 재고 프로그램을 도입했습니다. 책상 위에 200쪽짜리 매뉴얼이 놓여 있습니다.",
+      options: [
+        { label: "매뉴얼은 덮어두고 일단 이것저것 눌러본다.", eff: { learning: 13, detail: -4 } },
+        { label: "목차부터 정독한다. 순서대로 가는 게 확실하다.", eff: { learning: 3, detail: 9, routine: 6 } },
+        { label: "옆자리가 먼저 익히면 어깨너머로 배운다.", eff: { learning: -11, people: 5 } },
+      ] },
+    { scene: "🤖", grad: ["#E4D9FF", "#A88BFF"], title: "수요일 오후 · 새 키오스크",
+      text: "매장 키오스크가 신형으로 교체됐습니다. 첫 손님이 오기까지 20분 남았습니다.",
+      options: [
+        { label: "이것저것 눌러보며 메뉴 구조를 통째로 파악한다.", eff: { learning: 13, detail: -4 } },
+        { label: "설명서를 훑고 자주 쓸 기능을 순서대로 메모한다.", eff: { learning: 3, detail: 9, routine: 6 } },
+        { label: "본사 교육이 올 때까지는 기존 방식대로 응대한다.", eff: { learning: -11, people: 5 } },
+      ] },
+  ],
+  [ // 슬롯6 · routine 검증 (앵커)
+    { scene: "📦", grad: ["#FFD3C2", "#FF8E6E"], title: "목요일 · 같은 작업 4일째",
+      text: "나흘째 같은 소분 작업입니다. 오후 3시, 지금 당신의 상태는—",
+      options: [
+        { label: "속도가 붙어서 어제 기록을 깨는 중이다.", eff: { routine: 13, energy: 4 } },
+        { label: "시계만 본다. 내일은 다른 일을 시켜달라고 해야지.", eff: { routine: -13 } },
+        { label: "이어폰 끼고 무념무상. 이 정도면 할 만하다.", eff: { routine: 6, people: -3 } },
+      ] },
+    { scene: "🔁", grad: ["#FFD3C2", "#FF8E6E"], title: "목요일 · 검수 일주일째",
+      text: "같은 검수 작업 일주일째, 금요일이 하루 남았습니다. 지금 손끝의 감각은—",
+      options: [
+        { label: "손이 자동으로 움직인다. 오히려 마음이 편하다.", eff: { routine: 13, energy: 4 } },
+        { label: "달력을 보며 남은 날짜를 센다.", eff: { routine: -13 } },
+        { label: "라디오 틀어놓고 그럭저럭 페이스 유지 중.", eff: { routine: 6, people: -3 } },
+      ] },
+  ],
+  [ // 슬롯7 · people·detail (앵커)
+    { scene: "📞", grad: ["#D9E8FF", "#6FA0FF"], title: "금요일 · 진상 전화",
+      text: "수화기 너머에서 고객이 다짜고짜 소리를 지릅니다. 주문이 잘못 왔다고, 당장 책임지라고.",
+      options: [
+        { label: "일단 끝까지 듣는다. 화가 가라앉으면 풀 수 있다.", eff: { people: 13 } },
+        { label: "규정대로 교환 접수를 처리하고 신속하게 마무리한다.", eff: { people: -4, detail: 7, routine: 7 } },
+        { label: "“담당자 연결해드리겠습니다” — 선배에게 넘긴다.", eff: { people: -10, energy: -3 } },
+      ] },
+    { scene: "🧾", grad: ["#D9E8FF", "#6FA0FF"], title: "금요일 · 환불 실랑이",
+      text: "매장에서 손님이 환불 규정을 두고 언성을 높입니다. 뒤에는 다른 손님들이 줄 서 있습니다.",
+      options: [
+        { label: "차분히 사정을 끝까지 듣고 가능한 방법을 찾는다.", eff: { people: 13 } },
+        { label: "규정 문구를 보여드리며 절차대로 안내한다.", eff: { people: -4, detail: 7, routine: 7 } },
+        { label: "점장님을 호출한다. 내 선을 넘는 일이다.", eff: { people: -10, energy: -3 } },
+      ] },
+  ],
+  [ // 슬롯8 · energy·detail
+    { scene: "🏗️", grad: ["#DFF3D0", "#8CC96B"], title: "금요일 오후 · 창고 지원",
+      text: "창고 정리에 지원 요청이 왔습니다. 무거운 박스 100개 나르기와 재고 명단 작성 — 둘이서 역할을 나눠야 합니다.",
+      options: [
+        { label: "박스는 내가 나른다. 몸 쓰는 쪽이 낫다.", eff: { energy: 13 } },
+        { label: "명단 작성을 맡는다. 숫자는 정확해야 하니까.", eff: { energy: -9, detail: 8 } },
+      ] },
+    { scene: "🎪", grad: ["#DFF3D0", "#8CC96B"], title: "금요일 오후 · 행사 준비",
+      text: "내일 행사 준비로 물품 운반과 체크리스트 검수, 두 역할이 남았습니다.",
+      options: [
+        { label: "운반을 맡는다. 부지런히 움직이면 금방 끝난다.", eff: { energy: 13 } },
+        { label: "체크리스트 검수를 맡는다. 빠진 게 없어야 하니까.", eff: { energy: -9, detail: 8 } },
+      ] },
+  ],
+  [ // 슬롯9 · detail·learning
+    { scene: "🧮", grad: ["#FCE0EE", "#F08BC0"], title: "토요일 특근 · 3,000원의 미스터리",
+      text: "퇴근 10분 전, 정산 엑셀의 합계가 3,000원 안 맞습니다. 아무도 눈치채지 못했습니다.",
+      options: [
+        { label: "원인을 찾을 때까지 못 일어난다.", eff: { detail: 12, routine: 4 } },
+        { label: "메모를 남기고 퇴근한다. 월요일의 내가 해결할 것.", eff: { detail: -11 } },
+        { label: "검색해서 검증 함수를 새로 만들어 돌려본다.", eff: { learning: 11, detail: 5 } },
+      ] },
+    { scene: "📊", grad: ["#FCE0EE", "#F08BC0"], title: "토요일 특근 · 사라진 재고 2개",
+      text: "재고 수량이 장부와 2개 차이 납니다. 박스는 수십 개, 퇴근 시간은 다가옵니다.",
+      options: [
+        { label: "박스를 다 열어서라도 확인한다.", eff: { detail: 12, routine: 4 } },
+        { label: "다음 조에 메모를 남긴다. 2개쯤이야.", eff: { detail: -11 } },
+        { label: "입출고 로그를 엑셀로 추적하는 방법을 찾아본다.", eff: { learning: 11, detail: 5 } },
+      ] },
+  ],
+  [ // 슬롯10 · learning·routine
+    { scene: "🌙", grad: ["#C9D4E8", "#7A8FBF"], title: "일요일 밤 · 팀장의 메시지",
+      text: "“다음 주부터 새 지점 오픈 멤버로 갈래요? 아니면 본점에 남아서 지금 업무의 달인이 될래요?”",
+      options: [
+        { label: "새 지점. 처음부터 세팅하는 걸 해보고 싶다.", eff: { learning: 12, routine: -6 } },
+        { label: "본점. 지금 일을 완벽하게 만드는 쪽이 좋다.", eff: { routine: 11, learning: -5, detail: 4 } },
+      ] },
+    { scene: "📣", grad: ["#C9D4E8", "#7A8FBF"], title: "일요일 밤 · 본사 공지",
+      text: "본사 공지가 떴습니다. “신메뉴 교육 담당 지원자 모집” — 지원하지 않으면 기존 베스트 메뉴 담당을 계속합니다.",
+      options: [
+        { label: "신메뉴 교육 담당에 지원한다. 새 걸 배우는 자리다.", eff: { learning: 12, routine: -6 } },
+        { label: "기존 메뉴의 달인이 된다. 완성도가 내 무기다.", eff: { routine: 11, learning: -5, detail: 4 } },
+      ] },
+  ],
 ];
 const STORY_SEASON = "여름편 v1";
 // [측정 블루프린트] 시즌마다 장면(스킨)은 갈아끼워도 아래 슬롯별 측정 축은 절대 고정:
@@ -301,10 +368,30 @@ function seededShuffle(arr, seed) {
   return a;
 }
 
+// [응답 이력 기반 변형 선택] 재검사자는 이미 본 장면 대신 새 변형을 받는다.
+// 저장 구조(로컬): albafit_seen = { 슬롯번호: [본 변형 인덱스...] }
+// 서버 확장 시: test_sessions(session_id, user_id, season, completed_at, reliability)
+//              session_items(session_id, slot_no, variant_id, choice_id, position_shown, ms)
+// 선택 규칙: 사용자별 노출 횟수 최소 변형 우선 → 동률이면 전역 노출 균형 우선
+function loadSeenVariants() {
+  try { return JSON.parse(localStorage.getItem("albafit_seen") || "{}"); } catch (e) { return {}; }
+}
+function markSeenVariants(list) {
+  try {
+    const seen = JSON.parse(localStorage.getItem("albafit_seen") || "{}");
+    list.forEach((sc, i) => {
+      const s = new Set(seen[i] || []);
+      s.add(sc._v);
+      seen[i] = [...s];
+    });
+    localStorage.setItem("albafit_seen", JSON.stringify(seen));
+  } catch (e) { /* 저장 불가 환경에서는 시드 로테이션으로 자동 폴백 */ }
+}
+
 // 3단계: 고정 조건 3문항 + 상위 강점 2개 축에 맞춘 맞춤 조건 2문항
 const STAGE3_FIXED = [
-  { key: "time", q: "언제 일하고 싶으세요?", options: ["오전", "오후", "저녁", "무관"] },
-  { key: "term", q: "얼마나 일하실 계획인가요?", options: ["3개월 이상 장기", "단기·당일", "무관"] },
+  { key: "time", q: "언제 일하고 싶으세요?", options: ["새벽", "오전", "오후", "저녁", "종일", "무관"] },
+  { key: "term", q: "얼마나 일하실 계획인가요?", options: ["단기·당일", "일주일", "한 달", "3개월", "6개월 이상 장기", "무관"] },
   { key: "pay", q: "희망 시급은 어느 정도세요?", options: ["10,320원 이상(최저시급)", "12,000원 이상", "15,000원 이상", "18,000원 이상", "금액보다 적성 우선"] },
 ];
 const ADAPTIVE_COND = {
@@ -314,6 +401,12 @@ const ADAPTIVE_COND = {
   energy: { key: "load", q: "몸 쓰는 강도는 어디까지 괜찮으세요?", options: ["가벼운 활동까지", "강한 체력전도 OK", "무관"], whyName: "활동 체력" },
   learning: { key: "nov", q: "새로운 업무를 배우는 건 어떠세요?", options: ["배우는 게 좋다", "익숙한 일이 편하다", "무관"], whyName: "습득 속도" },
 };
+// 마지막 문항: 인적사항 — 성별·연령은 점수 산정에 쓰지 않고, 청소년 보호 등 법정 자격 확인에만 사용
+const DEMO_Q = {
+  age: { key: "age", q: "나이대가 어떻게 되세요?", options: ["만 15~18세", "만 19~29세", "30대", "40대", "50대 이상"] },
+  gender: { key: "gender", q: "성별을 알려주세요 (선택)", options: ["남성", "여성", "선택 안 함"] },
+};
+const TERM_RANK = { "단기·당일": 1, "일주일": 2, "한 달": 3, "3개월": 4, "6개월 이상 장기": 5 };
 const PAY_MIN = { "10,320원 이상(최저시급)": 10320, "12,000원 이상": 12000, "15,000원 이상": 15000, "18,000원 이상": 18000, "금액보다 적성 우선": 0 };
 const SCALE = ["전혀 아니다", "아니다", "보통", "그렇다", "매우 그렇다"];
 const STAGES = [
@@ -329,7 +422,7 @@ const JOBS = [
   {
     id: "confirm", title: "금융거래조회서 발송·회신 관리", org: "회계법인 감사지원팀", dong: "명일동",
     req: { routine: 90, detail: 90, people: 40, energy: 15, learning: 55 }, types: ["beaver", "owl"],
-    cond: { time: "오전", term: "3개월 이상 장기" },
+    cond: { time: "오전", term: "3개월" },
     attrs: { svc: "전화·채팅 응대", pace: "정해진 루틴", mat: "숫자·서류", load: "가벼운 활동까지", nov: "익숙한 일이 편하다" },
     payNum: 12000, pay: "시급 12,000원 · 3개월 근속 시 13,000원 소급", tags: ["사무", "숙련 4주", "근속 인센티브"], bossType: "owl",
     note: "은행·증권사별 접수 규칙이 달라 거래처 파악에 약 1개월이 필요합니다. 3개월 근속 시 시급이 13,000원으로 소급 인상되는 근속 인센티브 직무입니다.",
@@ -337,7 +430,7 @@ const JOBS = [
   {
     id: "dataentry", title: "회계자료 데이터 입력", org: "세무·회계 사무소", dong: "천호동",
     req: { routine: 95, detail: 80, people: 10, energy: 10, learning: 40 }, types: ["beaver", "turtle"],
-    cond: { time: "오후", term: "3개월 이상 장기" },
+    cond: { time: "오후", term: "3개월" },
     attrs: { svc: "무관", pace: "정해진 루틴", mat: "숫자·서류", load: "가벼운 활동까지", nov: "익숙한 일이 편하다" },
     payNum: 10500, pay: "시급 10,500원", tags: ["사무", "숙련 1주"], bossType: "beaver",
     note: "전표·증빙을 정해진 양식에 입력합니다. 반복 내성이 핵심입니다.",
@@ -345,7 +438,7 @@ const JOBS = [
   {
     id: "proofread", title: "교재 검수·교정 내근직", org: "길동 교육출판사", dong: "길동",
     req: { routine: 70, detail: 95, people: 15, energy: 10, learning: 75 }, types: ["owl", "beaver"],
-    cond: { time: "오후", term: "3개월 이상 장기" },
+    cond: { time: "오후", term: "3개월" },
     attrs: { svc: "무관", pace: "정해진 루틴", mat: "숫자·서류", load: "가벼운 활동까지", nov: "배우는 게 좋다" },
     payNum: 15000, pay: "시급 15,000원", tags: ["사무", "숙련 2주", "고시급"], bossType: "owl",
     note: "수학·과학 교재의 오탈자와 풀이 오류를 잡는 직무입니다. 꼼꼼함 최상위 유형에게 시장에서 가장 확실한 고시급 사무직입니다.",
@@ -353,23 +446,23 @@ const JOBS = [
   {
     id: "callcenter", title: "인바운드 고객센터 상담사", org: "천호동 가전 A/S센터", dong: "천호동",
     req: { routine: 65, detail: 60, people: 85, energy: 15, learning: 65 }, types: ["retriever", "fox"],
-    cond: { time: "오전", term: "3개월 이상 장기" },
+    cond: { time: "오전", term: "6개월 이상 장기" },
     attrs: { svc: "전화·채팅 응대", pace: "정해진 루틴", mat: "숫자·서류", load: "가벼운 활동까지", nov: "배우는 게 좋다" },
     payNum: 11500, pay: "월 240만원 (시급 환산 약 11,500원)", tags: ["상담", "숙련 2주", "앉아서 근무"], bossType: "retriever",
     note: "걸려오는 문의만 응대하는 인바운드라 영업 부담이 없습니다. 전화 응대가 편한 유형에게 안정적인 좌식 직무입니다.",
   },
   {
     id: "tm", title: "아웃바운드 TM (기본급+인센티브)", org: "천호동 금융상품 콜센터", dong: "천호동",
-    req: { routine: 40, detail: 45, people: 92, energy: 55, learning: 70 }, types: ["parrot", "retriever"],
-    cond: { time: "오전", term: "3개월 이상 장기" },
+    req: { routine: 40, detail: 45, people: 92, energy: 55, learning: 70 }, types: ["parrot", "retriever"], minAdult: true,
+    cond: { time: "오전", term: "3개월" },
     attrs: { svc: "전화·채팅 응대", pace: "매일 다른 업무", mat: "숫자·서류", load: "가벼운 활동까지", nov: "배우는 게 좋다" },
     payNum: 16800, pay: "월 350만원 가능 (기본급+인센티브)", tags: ["상담", "성과급", "고시급"], bossType: "parrot",
     note: "거절을 대화로 뒤집는 일입니다. 대인 에너지가 최상위인 유형만 고수익이 나고, 아닌 유형에겐 가장 빨리 지치는 직무입니다.",
   },
   {
     id: "conven", title: "편의점 야간 스태프", org: "명일역 편의점", dong: "명일동",
-    req: { routine: 75, detail: 55, people: 50, energy: 55, learning: 45 }, types: ["turtle", "ant"],
-    cond: { time: "저녁", term: "3개월 이상 장기" },
+    req: { routine: 75, detail: 55, people: 50, energy: 55, learning: 45 }, types: ["turtle", "ant"], minAdult: true,
+    cond: { time: "저녁", term: "6개월 이상 장기" },
     attrs: { svc: "대면 응대", pace: "정해진 루틴", mat: "물건·정리", load: "가벼운 활동까지", nov: "익숙한 일이 편하다" },
     payNum: 12900, pay: "시급 12,900원 (야간수당 포함)", tags: ["매장", "숙련 3일", "야간"], bossType: "turtle",
     note: "발주·진열·정산이 루틴대로 도는 직무입니다. 조용한 밤 시간대에 혼자 몰입하는 유형에게 만족도가 높습니다.",
@@ -377,14 +470,14 @@ const JOBS = [
   {
     id: "mart", title: "대형마트 스태프 (진열·계산)", org: "고덕동 창고형 마트", dong: "고덕동",
     req: { routine: 65, detail: 55, people: 55, energy: 70, learning: 40 }, types: ["ant", "retriever"],
-    cond: { time: "오전", term: "3개월 이상 장기" },
+    cond: { time: "오전", term: "3개월" },
     attrs: { svc: "대면 응대", pace: "정해진 루틴", mat: "물건·정리", load: "강한 체력전도 OK", nov: "익숙한 일이 편하다" },
     payNum: 11500, pay: "시급 11,500원", tags: ["매장", "숙련 1주"], bossType: "ant",
     note: "진열과 계산이 반복되는 체력형 매장 직무입니다. 꾸준한 페이스를 유지하는 유형에게 맞습니다.",
   },
   {
     id: "inventory", title: "야간 재고조사 스태프", org: "둔촌동 재고조사 대행", dong: "둔촌동",
-    req: { routine: 80, detail: 78, people: 12, energy: 60, learning: 35 }, types: ["beaver", "ant"],
+    req: { routine: 80, detail: 78, people: 12, energy: 60, learning: 35 }, types: ["beaver", "ant"], minAdult: true,
     cond: { time: "저녁", term: "단기·당일" },
     attrs: { svc: "무관", pace: "정해진 루틴", mat: "물건·정리", load: "강한 체력전도 OK", nov: "익숙한 일이 편하다" },
     payNum: 13000, pay: "시급 13,000원 (야간)", tags: ["단기", "당일 지급 가능"], bossType: "beaver",
@@ -393,15 +486,15 @@ const JOBS = [
   {
     id: "cafe", title: "카페 바리스타", org: "고덕역 프랜차이즈 카페", dong: "고덕동",
     req: { routine: 55, detail: 55, people: 80, energy: 75, learning: 60 }, types: ["retriever", "parrot"],
-    cond: { time: "오전", term: "3개월 이상 장기" },
+    cond: { time: "오전", term: "3개월" },
     attrs: { svc: "대면 응대", pace: "정해진 루틴", mat: "물건·정리", load: "강한 체력전도 OK", nov: "배우는 게 좋다" },
     payNum: 10320, pay: "시급 10,320원", tags: ["서비스", "숙련 2주"], bossType: "retriever",
     note: "레시피 숙지와 손님 응대가 절반씩입니다. 대인 응대와 체력이 중요합니다.",
   },
   {
-    id: "logistics", title: "물류센터 피킹·패킹 (셔틀 운행)", org: "상일동 풀필먼트센터", dong: "상일동",
-    req: { routine: 75, detail: 50, people: 10, energy: 95, learning: 30 }, types: ["ant", "cheetah"],
-    cond: { time: "저녁", term: "단기·당일" },
+    id: "logistics", title: "물류센터 새벽 피킹·패킹 (셔틀 운행)", org: "상일동 풀필먼트센터", dong: "상일동",
+    req: { routine: 75, detail: 50, people: 10, energy: 95, learning: 30 }, types: ["ant", "cheetah"], minAdult: true,
+    cond: { time: "새벽", term: "단기·당일" },
     attrs: { svc: "무관", pace: "정해진 루틴", mat: "물건·정리", load: "강한 체력전도 OK", nov: "익숙한 일이 편하다" },
     payNum: 15500, pay: "일급 124,000원 · 익일 지급", tags: ["물류", "숙련 3일", "고시급"], bossType: "ant",
     note: "체력이 곧 성과입니다. 익일 지급과 셔틀 운행으로 단기 목돈 마련에 최적입니다.",
@@ -409,7 +502,7 @@ const JOBS = [
   {
     id: "frontdesk", title: "학원 데스크·수납 보조", org: "명일동 중등 전문 학원", dong: "명일동",
     req: { routine: 50, detail: 70, people: 85, energy: 35, learning: 65 }, types: ["retriever", "fox"],
-    cond: { time: "오후", term: "3개월 이상 장기" },
+    cond: { time: "오후", term: "6개월 이상 장기" },
     attrs: { svc: "대면 응대", pace: "매일 다른 업무", mat: "숫자·서류", load: "가벼운 활동까지", nov: "배우는 게 좋다" },
     payNum: 10800, pay: "시급 10,800원", tags: ["교육", "숙련 2주"], bossType: "fox",
     note: "학부모 응대와 수납 처리가 함께 있어 대인 응대와 꼼꼼함이 모두 필요합니다.",
@@ -417,7 +510,7 @@ const JOBS = [
   {
     id: "video", title: "쇼츠·영상편집 보조", org: "성내동 콘텐츠 스튜디오", dong: "성내동",
     req: { routine: 50, detail: 70, people: 30, energy: 20, learning: 90 }, types: ["fox", "owl"],
-    cond: { time: "오후", term: "3개월 이상 장기" },
+    cond: { time: "오후", term: "3개월" },
     attrs: { svc: "무관", pace: "매일 다른 업무", mat: "숫자·서류", load: "가벼운 활동까지", nov: "배우는 게 좋다" },
     payNum: 11000, pay: "시급 11,000원", tags: ["콘텐츠", "숙련 2주", "재택 일부"], bossType: "fox",
     note: "컷편집·자막 작업으로 시작해 채널 운영까지 배울 수 있습니다. 습득 속도가 곧 성장 속도인, 경력이 되는 대표 직무입니다.",
@@ -425,7 +518,7 @@ const JOBS = [
   {
     id: "tutor", title: "중등 수학 보조강사·채점", org: "길동 수학전문학원", dong: "길동",
     req: { routine: 45, detail: 85, people: 70, energy: 25, learning: 92 }, types: ["fox", "owl"],
-    cond: { time: "저녁", term: "3개월 이상 장기" },
+    cond: { time: "저녁", term: "6개월 이상 장기" },
     attrs: { svc: "대면 응대", pace: "매일 다른 업무", mat: "숫자·서류", load: "가벼운 활동까지", nov: "배우는 게 좋다" },
     payNum: 20000, pay: "시급 20,000원", tags: ["교육", "숙련 2주", "고시급"], bossType: "fox",
     note: "풀이 채점과 질문 응대를 맡습니다. 습득 속도와 꼼꼼함이 높을수록 강사 트랙으로 성장할 수 있어 이력서 경력으로 강력한 직무입니다.",
@@ -440,7 +533,7 @@ const JOBS = [
   },
   {
     id: "wedding", title: "웨딩홀 연회 서빙 스태프", org: "천호동 웨딩컨벤션", dong: "천호동",
-    req: { routine: 35, detail: 50, people: 80, energy: 90, learning: 50 }, types: ["parrot", "cheetah"],
+    req: { routine: 35, detail: 50, people: 80, energy: 90, learning: 50 }, types: ["parrot", "cheetah"], minAdult: true,
     cond: { time: "무관", term: "단기·당일" },
     attrs: { svc: "대면 응대", pace: "매일 다른 업무", mat: "물건·정리", load: "강한 체력전도 OK", nov: "익숙한 일이 편하다" },
     payNum: 18000, pay: "시급 18,000원 (주말)", tags: ["행사", "당일 지급", "고시급"], bossType: "retriever",
@@ -449,7 +542,7 @@ const JOBS = [
   {
     id: "library", title: "도서관 자료 정리 보조", org: "암사동 구립 도서관", dong: "암사동",
     req: { routine: 80, detail: 75, people: 30, energy: 45, learning: 35 }, types: ["turtle", "owl"],
-    cond: { time: "오전", term: "3개월 이상 장기" },
+    cond: { time: "오전", term: "3개월" },
     attrs: { svc: "무관", pace: "정해진 루틴", mat: "물건·정리", load: "가벼운 활동까지", nov: "익숙한 일이 편하다" },
     payNum: 10320, pay: "시급 10,320원", tags: ["공공", "숙련 1주"], bossType: "turtle",
     note: "청구기호 순 배열 등 규칙 기반 업무입니다. 조용히 몰입하는 성향에 적합합니다.",
@@ -483,7 +576,11 @@ function prefScore(prefs, cond) {
     const p = prefs[key];
     if (!p) return;
     tot += 1;
-    if (p === "무관" || cond[key] === "무관" || p === cond[key]) { hit += 1; if (p !== "무관") matched.push(p); }
+    let ok = false;
+    if (p === "무관" || cond[key] === "무관") ok = true;
+    else if (key === "time") ok = p === cond[key] || p === "종일"; // 종일 가능자는 모든 시간대와 일치
+    else if (key === "term") ok = (TERM_RANK[p] || 0) >= (TERM_RANK[cond[key]] || 0); // 의향 기간 >= 요구 기간
+    if (ok) { hit += 1; if (p !== "무관") matched.push(p === "종일" ? "종일 가능" : p); }
   });
   return { score: tot ? Math.round((hit / tot) * 100) : 100, matched };
 }
@@ -570,9 +667,19 @@ function AlbaFitV7() {
   const [sceneMs, setSceneMs] = useState(Array(10).fill(null)); // 장면별 응답 소요시간(ms)
   const [qStart, setQStart] = useState(Date.now());
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 100000));
-  const orders = useMemo(() => STORY.map((sc, i) => seededShuffle([...sc.options.keys()], seed * 13 + i + 1)), [seed]);
+  const activeStory = useMemo(() => {
+    const seen = loadSeenVariants();
+    return STORY_POOL.map((slot, i) => {
+      const seenList = seen[i] || [];
+      const fresh = slot.map((_, vi) => vi).filter(vi => !seenList.includes(vi));
+      const pick = fresh.length ? fresh[(seed + i * 7) % fresh.length] : (seed + i * 7) % slot.length; // 다 봤으면 로테이션 폴백
+      return { ...slot[pick], _v: pick };
+    });
+  }, [seed]); // 재검사자는 안 본 변형이 우선 배정된다
+  const orders = useMemo(() => activeStory.map((sc, i) => seededShuffle([...sc.options.keys()], seed * 13 + i + 1)), [activeStory, seed]);
   const [prefs, setPrefs] = useState({});
   const [sortKey, setSortKey] = useState("total");
+  const [showAll, setShowAll] = useState(false);
   const [jobReq, setJobReq] = useState({ routine: 90, detail: 90, people: 40, energy: 15, learning: 55 });
   const [jobTitle, setJobTitle] = useState("금융거래조회서 발송·회신 관리");
   const [jobDong, setJobDong] = useState("명일동");
@@ -584,12 +691,12 @@ function AlbaFitV7() {
   const bossResult = useMemo(() => bossDone ? typeRank(bossProfileFrom(bossAnswers))[0] : null, [bossAnswers, bossDone]);
   const effectiveBoss = bossTab === "quiz" && bossResult ? bossResult.id : bossType;
 
-  const resetTest = () => { setStage(0); setPhase("quiz"); setQIdx(0); setStory(Array(10).fill(null)); setPosLog(Array(10).fill(null)); setSceneMs(Array(10).fill(null)); setSeed(Math.floor(Math.random() * 100000)); setQStart(Date.now()); setPrefs({}); };
+  const resetTest = () => { setStage(0); setPhase("quiz"); setQIdx(0); setStory(Array(10).fill(null)); setPosLog(Array(10).fill(null)); setSceneMs(Array(10).fill(null)); setSeed(Math.floor(Math.random() * 100000)); setQStart(Date.now()); setPrefs({}); setShowAll(false); };
 
   // 프로필: 스토리 선택의 숨은 효과를 누적 (기준 50, 0~100 클램프)
   const profile = useMemo(() => {
     const p = { routine: 50, detail: 50, people: 50, energy: 50, learning: 50 };
-    STORY.forEach((sc, i) => {
+    activeStory.forEach((sc, i) => {
       const a = story[i];
       if (a == null) return;
       Object.entries(sc.options[a].eff).forEach(([k, v]) => { p[k] = Math.max(0, Math.min(100, p[k] + v)); });
@@ -614,7 +721,7 @@ function AlbaFitV7() {
   // 3단계 문항: 고정 3 + 상위 강점 2개 축의 맞춤 조건 (2단계 완료 시점의 프로필 기반)
   const stage3Items = useMemo(() => {
     const top2 = TRAITS.map(t => ({ key: t.key, v: profile[t.key] })).sort((a, b) => b.v - a.v).slice(0, 2);
-    return [...STAGE3_FIXED, ...top2.map(t => ({ ...ADAPTIVE_COND[t.key], adaptive: true }))];
+    return [...STAGE3_FIXED, ...top2.map(t => ({ ...ADAPTIVE_COND[t.key], adaptive: true })), DEMO_Q.age, DEMO_Q.gender];
   }, [profile]);
 
   const myTypes = useMemo(() => typeRank(profile), [profile]);
@@ -634,10 +741,11 @@ function AlbaFitV7() {
       const total = Math.max(0, Math.min(99, Math.round(fit * pp.wf + distScore(walk) * pp.wd + pf.score * pp.wp - pen + meet + cp.bonus + ab.bonus + tb)));
       return { ...j, walk, fit, matched: [...pf.matched, ...ab.matched], pen, meet, cp, ab, tb, total };
     });
-    if (sortKey === "fit") list.sort((a, b) => b.fit - a.fit);
-    else if (sortKey === "near") list.sort((a, b) => a.walk - b.walk);
-    else list.sort((a, b) => b.total - a.total);
-    return list;
+    const eligible = prefs.age === "만 15~18세" ? list.filter(j => !j.minAdult) : list; // 청소년 보호 필터
+    if (sortKey === "fit") eligible.sort((a, b) => b.fit - a.fit);
+    else if (sortKey === "near") eligible.sort((a, b) => a.walk - b.walk);
+    else eligible.sort((a, b) => b.total - a.total);
+    return eligible;
   }, [profile, prefs, myDong, sortKey, myTypeId]);
 
   const rankedApplicants = useMemo(() =>
@@ -761,7 +869,7 @@ function AlbaFitV7() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 14 }}>
             {STAGES.map((s, i) => (
               <div key={s.name} style={{ ...card, borderTop: `4px solid ${s.color}` }}>
-                <Chip bg={s.soft} color={s.color}>{i + 1}단계 · {["5장면", "5장면", "5문항"][i]}</Chip>
+                <Chip bg={s.soft} color={s.color}>{i + 1}단계 · {["5장면", "5장면", "7문항"][i]}</Chip>
                 <div style={{ fontSize: 16.5, fontWeight: 800, margin: "10px 0 4px" }}>{s.name}</div>
                 <div style={{ fontSize: 13, color: C.sub, lineHeight: 1.6 }}>{s.sub}</div>
               </div>
@@ -776,7 +884,7 @@ function AlbaFitV7() {
   if (mode === "worker" && phase !== "result") {
     const st = STAGES[stage];
     const isChoice = stage === 2;
-    const items = stage === 0 ? STORY.slice(0, 5) : stage === 1 ? STORY.slice(5) : stage3Items;
+    const items = stage === 0 ? activeStory.slice(0, 5) : stage === 1 ? activeStory.slice(5) : stage3Items;
     const stageAnswered = isChoice
       ? stage3Items.filter(({ key }) => prefs[key]).length
       : items.filter((_, i) => story[(stage === 0 ? 0 : 5) + i] != null).length;
@@ -809,7 +917,7 @@ function AlbaFitV7() {
               </div>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: next.soft, borderRadius: 12, padding: "10px 16px", marginBottom: 18 }}>
                 <span style={{ fontSize: 12.5, fontWeight: 800, color: next.color }}>다음 · {stage + 2}단계 {next.name}</span>
-                <span style={{ fontSize: 12, color: C.sub }}>{stage === 0 ? "스토리 2부 · 5장면 · 약 40초" : "마지막 5문항 · 30초면 끝! ⚡"}</span>
+                <span style={{ fontSize: 12, color: C.sub }}>{stage === 0 ? "스토리 2부 · 5장면 · 약 40초" : "마지막 7문항 · 40초면 끝! ⚡"}</span>
               </div>
               <div>
                 <button style={{ ...btn(next.color), fontSize: 16, padding: "14px 34px" }}
@@ -828,7 +936,7 @@ function AlbaFitV7() {
       setQStart(Date.now());
       if (qIdx < items.length - 1) setQIdx(qIdx + 1);
       else if (stage < 2) setPhase("rest");
-      else setPhase("result");
+      else { markSeenVariants(activeStory); setPhase("result"); }
     };
     const stepper = [
       { label: "동네 인증", state: "done", color: C.local },
@@ -868,9 +976,18 @@ function AlbaFitV7() {
               </div>
             )}
             {!isChoice && (
-              <div style={{ textAlign: "center", margin: "2px 0 10px" }}>
-                <div style={{ fontSize: 56, lineHeight: 1 }}>{qu.scene}</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: st.color, marginTop: 8 }}>{qu.title}</div>
+              <div style={{ margin: "2px 0 12px" }}>
+                {qu.img ? (
+                  <img src={qu.img} alt={qu.title} style={{ width: "100%", borderRadius: 16, display: "block" }} />
+                ) : (
+                  <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", padding: "32px 0", textAlign: "center", background: `linear-gradient(135deg, ${qu.grad[0]}, ${qu.grad[1]})` }}>
+                    <div style={{ position: "absolute", left: -34, top: -34, width: 150, height: 150, borderRadius: "50%", background: "rgba(255,255,255,.22)" }} />
+                    <div style={{ position: "absolute", right: -26, bottom: -46, width: 130, height: 130, borderRadius: "50%", background: "rgba(0,0,0,.10)" }} />
+                    <div style={{ position: "absolute", right: 44, top: 14, width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,.3)" }} />
+                    <div className="teaser-emoji" style={{ fontSize: 88, lineHeight: 1, position: "relative", display: "inline-block", filter: "drop-shadow(0 6px 12px rgba(0,0,0,.18))" }}>{qu.scene}</div>
+                  </div>
+                )}
+                <div style={{ fontSize: 13.5, fontWeight: 800, color: st.color, marginTop: 10, textAlign: "center" }}>{qu.title}</div>
               </div>
             )}
             <div style={{ fontSize: isChoice ? 20 : 16, fontWeight: isChoice ? 800 : 700, lineHeight: 1.75, marginBottom: 20, whiteSpace: "pre-line", color: C.ink }}>
@@ -916,7 +1033,7 @@ function AlbaFitV7() {
               style={{ ...btn("transparent", C.sub), border: `1px solid ${C.line}`, opacity: qIdx === 0 ? 0.4 : 1, padding: "10px 18px", fontSize: 13.5 }}>이전</button>
             {stageDone && qIdx === items.length - 1 && (
               <button style={{ ...btn(st.color), padding: "10px 20px", fontSize: 13.5 }}
-                onClick={() => (stage < 2 ? setPhase("rest") : setPhase("result"))}>
+                onClick={() => { if (stage < 2) setPhase("rest"); else { markSeenVariants(activeStory); setPhase("result"); } }}>
                 {stage < 2 ? "다음 단계 →" : "내 캐릭터 확인 →"}
               </button>
             )}
@@ -929,6 +1046,7 @@ function AlbaFitV7() {
   // ================= 결과 =================
   if (mode === "worker" && phase === "result") {
     const me = myTypes[0];
+    const timeBadge = prefs.time === "새벽" ? { e: "🌅", n: "얼리버드" } : prefs.time === "저녁" ? { e: "🦉", n: "야행성" } : prefs.time === "종일" ? { e: "🔋", n: "풀타임 체력" } : null;
     const goodMates = me.goodWith.map(id => CHAR_BY_ID[id]);
     const hardMate = me.hardWith ? CHAR_BY_ID[me.hardWith] : null;
     const sortTabs = [["total", "동네 추천순"], ["fit", "적성 핏순"], ["near", "가까운 순"]];
@@ -949,10 +1067,19 @@ function AlbaFitV7() {
                 <div style={{ fontSize: 30, fontWeight: 900, margin: "4px 0 2px" }}>{me.name} <span style={{ fontSize: 16, fontWeight: 700, color: "#B9BFCC" }}>— {me.title}</span></div>
                 <div style={{ fontSize: 14.5, fontStyle: "italic", color: "#FFB35C", margin: "6px 0 10px" }}>{me.line}</div>
                 <p style={{ fontSize: 13.5, color: "#C6CBD4", lineHeight: 1.65, margin: "0 0 12px" }}>{me.desc}</p>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
                   <Chip bg="rgba(255,255,255,.14)" color="#FFE0A8">{me.name} 일치도 {me.matchPct}%</Chip>
-                  <Chip bg="rgba(14,155,108,.25)" color="#5FD9AE">👍 최고의 알바 · {me.best}</Chip>
-                  <Chip bg="rgba(217,119,43,.22)" color="#FFB07A">💀 최악의 알바 · {me.worst}</Chip>
+                  {timeBadge && <Chip bg="rgba(126,160,255,.22)" color="#B9CBFF">시간대 배지 · {timeBadge.e} {timeBadge.n}</Chip>}
+                </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "10px 0 12px" }}>
+                  <div style={{ flex: "1 1 230px", background: "rgba(14,155,108,.18)", border: "1.5px solid rgba(95,217,174,.65)", borderRadius: 14, padding: "13px 16px" }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#5FD9AE", letterSpacing: 1 }}>👍 최고의 알바</div>
+                    <div style={{ fontSize: 17, fontWeight: 900, color: "#FFFFFF", marginTop: 5, lineHeight: 1.4 }}>{me.best}</div>
+                  </div>
+                  <div style={{ flex: "1 1 230px", background: "rgba(217,119,43,.16)", border: "1.5px solid rgba(255,176,122,.6)", borderRadius: 14, padding: "13px 16px" }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#FFB07A", letterSpacing: 1 }}>💀 최악의 알바</div>
+                    <div style={{ fontSize: 17, fontWeight: 900, color: "#FFFFFF", marginTop: 5, lineHeight: 1.4 }}>{me.worst}</div>
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <Chip bg="rgba(46,86,232,.25)" color="#9FB6FF">💚 잘 맞는 사장님 · {goodMates.map(g => `${g.emoji}${g.name}`).join(" ")}</Chip>
@@ -990,7 +1117,7 @@ function AlbaFitV7() {
               ))}
             </div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {stage3Items.map(({ key }) => prefs[key] && prefs[key] !== "무관" && prefs[key] !== "금액보다 적성 우선" && (
+              {stage3Items.map(({ key }) => prefs[key] && prefs[key] !== "무관" && prefs[key] !== "금액보다 적성 우선" && prefs[key] !== "선택 안 함" && (
                 <Chip key={key} bg={C.localSoft} color={C.local}>희망 · {prefs[key]}</Chip>
               ))}
               {prefs.pay && <Chip bg={C.companySoft} color={C.company}>매칭 모드 · {payProfile(prefs.pay).label}</Chip>}
@@ -999,7 +1126,7 @@ function AlbaFitV7() {
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "6px 4px 10px", flexWrap: "wrap", gap: 8 }}>
-            <div style={{ fontSize: 15, fontWeight: 800 }}>{me.emoji} {me.name}에게 맞는 공고</div>
+            <div style={{ fontSize: 15, fontWeight: 800 }}>{me.emoji} {me.name}에게 맞는 공고 <span style={{ fontSize: 12, fontWeight: 700, color: C.sub }}>· 전체 {rankedJobs.length}건 중 핏 상위 5건</span></div>
             <div style={{ display: "flex", gap: 6 }}>
               {sortTabs.map(([k, label]) => (
                 <button key={k} onClick={() => setSortKey(k)} style={{ padding: "6px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 700, fontFamily: font, cursor: "pointer", border: `1.5px solid ${sortKey === k ? C.local : C.line}`, background: sortKey === k ? C.localSoft : C.paper, color: sortKey === k ? C.local : C.sub }}>{label}</button>
@@ -1008,7 +1135,7 @@ function AlbaFitV7() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {rankedJobs.map((j, i) => {
+            {(showAll ? rankedJobs : rankedJobs.slice(0, 5)).map((j, i) => {
               const dt = distTone(j.walk);
               const boss = CHAR_BY_ID[j.bossType];
               return (
@@ -1044,6 +1171,17 @@ function AlbaFitV7() {
                 </div>
               );
             })}
+          </div>
+
+          {!showAll && rankedJobs.length > 5 && (
+            <div style={{ textAlign: "center", marginTop: 14 }}>
+              <button onClick={() => setShowAll(true)} style={{ background: C.paper, border: `1.5px solid ${C.line}`, borderRadius: 12, padding: "12px 28px", fontSize: 13.5, fontWeight: 700, color: C.sub, cursor: "pointer", fontFamily: font }}>
+                나머지 {rankedJobs.length - 5}건 더 보기 ↓
+              </button>
+            </div>
+          )}
+          <div style={{ fontSize: 10.5, color: "#9AA1B0", marginTop: 14, textAlign: "center" }}>
+            * 성별·연령 정보는 매칭 점수에 사용되지 않으며, 청소년 야간·유해업종 제한 등 법정 자격 확인에만 사용됩니다.
           </div>
         </div>
       </div>
