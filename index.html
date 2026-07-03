@@ -5,8 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>알바핏 — 경력이 되는 알바, 적성 90점</title>
 <meta property="og:title" content="알바핏 — 경력이 되는 알바, 적성 90점" />
-<meta property="og:description" content="맞는 알바는 이력서 첫 줄이 되고, 맞는 채용은 1년을 맡깁니다. 우리 동네 적성 매칭 알바핏" />
+<meta property="og:description" content="맞는 알바는 이력서 첫 줄이 되고, 맞는 채용은 1년을 아낍니다. 우리 동네 적성 매칭 알바핏" />
 <meta property="og:type" content="website" />
+<meta property="og:url" content="https://albafit.vercel.app" />
+<meta property="og:image" content="https://albafit.vercel.app/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 <style>html,body{margin:0;padding:0;background:#F5F6F2}</style>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -240,7 +245,7 @@ function buildStage2(stage1Answers) {
 const STAGE3_FIXED = [
   { key: "time", q: "언제 일하고 싶으세요?", options: ["오전", "오후", "저녁", "무관"] },
   { key: "term", q: "얼마나 일하실 계획인가요?", options: ["3개월 이상 장기", "단기·당일", "무관"] },
-  { key: "pay", q: "희망 시급은 어느 정도세요?", options: ["10,500원 이상", "11,000원 이상", "금액보다 적성 우선"] },
+  { key: "pay", q: "희망 시급은 어느 정도세요?", options: ["10,320원 이상(최저시급)", "12,000원 이상", "15,000원 이상", "18,000원 이상", "금액보다 적성 우선"] },
 ];
 const ADAPTIVE_COND = {
   people: { key: "svc", q: "응대는 어떤 방식이 편하세요?", options: ["대면 응대", "전화·채팅 응대", "무관"], whyName: "대인 응대" },
@@ -249,7 +254,7 @@ const ADAPTIVE_COND = {
   energy: { key: "load", q: "몸 쓰는 강도는 어디까지 괜찮으세요?", options: ["가벼운 활동까지", "강한 체력전도 OK", "무관"], whyName: "활동 체력" },
   learning: { key: "nov", q: "새로운 업무를 배우는 건 어떠세요?", options: ["배우는 게 좋다", "익숙한 일이 편하다", "무관"], whyName: "습득 속도" },
 };
-const PAY_MIN = { "10,500원 이상": 10500, "11,000원 이상": 11000, "금액보다 적성 우선": 0 };
+const PAY_MIN = { "10,320원 이상(최저시급)": 10320, "12,000원 이상": 12000, "15,000원 이상": 15000, "18,000원 이상": 18000, "금액보다 적성 우선": 0 };
 const SCALE = ["전혀 아니다", "아니다", "보통", "그렇다", "매우 그렇다"];
 const STAGES = [
   { name: "기본 성향", sub: "나는 어떤 사람인가", color: C.worker, soft: C.workerSoft },
@@ -266,8 +271,8 @@ const JOBS = [
     req: { routine: 90, detail: 90, people: 40, energy: 15, learning: 55 },
     cond: { time: "오전", term: "3개월 이상 장기" },
     attrs: { svc: "전화·채팅 응대", pace: "정해진 루틴", mat: "숫자·서류", load: "가벼운 활동까지", nov: "익숙한 일이 편하다" },
-    payNum: 11500, pay: "시급 11,500원", tags: ["사무", "숙련 4주"], bossType: "owl",
-    note: "은행·증권사별 접수 규칙이 달라 거래처 파악에 약 1개월이 필요합니다. 반복 내성과 꼼꼼함이 높을수록 오래 근속합니다.",
+    payNum: 12000, pay: "시급 12,000원 · 3개월 근속 시 13,000원 소급", tags: ["사무", "숙련 4주", "근속 인센티브"], bossType: "owl",
+    note: "은행·증권사별 접수 규칙이 달라 거래처 파악에 약 1개월이 필요합니다. 3개월 근속 시 시급이 13,000원으로 소급 인상되는 근속 인센티브 직무입니다.",
   },
   {
     id: "dataentry", title: "회계자료 데이터 입력", org: "세무·회계 사무소", dong: "천호동",
@@ -317,6 +322,22 @@ const JOBS = [
     payNum: 10200, pay: "시급 10,200원", tags: ["공공", "숙련 1주"], bossType: "turtle",
     note: "청구기호 순 배열 등 규칙 기반 업무입니다. 조용히 몰입하는 성향에 적합합니다.",
   },
+  {
+    id: "tutor", title: "중등 수학 보조강사·채점", org: "길동 수학전문학원", dong: "길동",
+    req: { routine: 45, detail: 85, people: 70, energy: 25, learning: 92 },
+    cond: { time: "저녁", term: "3개월 이상 장기" },
+    attrs: { svc: "대면 응대", pace: "매일 다른 업무", mat: "숫자·서류", load: "가벼운 활동까지", nov: "배우는 게 좋다" },
+    payNum: 20000, pay: "시급 20,000원", tags: ["교육", "숙련 2주", "고시급"], bossType: "fox",
+    note: "풀이 채점과 질문 응대를 맡습니다. 습득 속도와 꼼꼼함이 높을수록 강사 트랙으로 성장할 수 있어 이력서 경력으로 강력한 직무입니다.",
+  },
+  {
+    id: "wedding", title: "웨딩홀 연회 서빙 스태프", org: "천호동 웨딩컨벤션", dong: "천호동",
+    req: { routine: 35, detail: 50, people: 80, energy: 90, learning: 50 },
+    cond: { time: "무관", term: "단기·당일" },
+    attrs: { svc: "대면 응대", pace: "매일 다른 업무", mat: "물건·정리", load: "강한 체력전도 OK", nov: "익숙한 일이 편하다" },
+    payNum: 18000, pay: "시급 18,000원 (주말)", tags: ["행사", "당일 지급", "고시급"], bossType: "retriever",
+    note: "주말 집중 고수익 직무입니다. 체력과 대인 응대가 핵심이며, 당일 지급으로 단기 목표 자금 마련에 적합합니다.",
+  },
 ];
 
 // ---------- 지원자 ----------
@@ -360,10 +381,22 @@ function adaptiveBonus(prefs, attrs) {
   });
   return { bonus, matched };
 }
-function payPenalty(prefs, payNum) {
+// Q3: '적성 우선'과 '고시급' 응답자는 다른 사용자 그룹 — 그룹별 매칭 프로파일
+function payProfile(payPref) {
+  if (payPref === "금액보다 적성 우선")
+    return { label: "적성 우선형 · 적성 60% 가중", wf: 0.6, wd: 0.3, wp: 0.1, meetBonus: 0, missNear: 4, missFar: 8 };
+  if (payPref === "15,000원 이상" || payPref === "18,000원 이상")
+    return { label: "고시급 집중형 · 시급 조건 강화", wf: 0.45, wd: 0.2, wp: 0.15, meetBonus: 12, missNear: 14, missFar: 25 };
+  return { label: "균형형", wf: 0.5, wd: 0.3, wp: 0.2, meetBonus: 0, missNear: 8, missFar: 15 };
+}
+function payPenalty(prefs, payNum, pp) {
   const min = PAY_MIN[prefs.pay] || 0;
   if (!min || payNum >= min) return 0;
-  return payNum >= min - 500 ? 8 : 15;
+  return payNum >= min * 0.9 ? pp.missNear : pp.missFar; // 희망액의 90% 이상이면 근소 미달
+}
+function payMeet(prefs, payNum, pp) {
+  const min = PAY_MIN[prefs.pay] || 0;
+  return min && payNum >= min ? pp.meetBonus : 0;
 }
 function totalScore(fit, walk, pref, penalty, compatBonus) {
   return Math.max(0, Math.min(99, Math.round(fit * 0.5 + distScore(walk) * 0.3 + pref * 0.2 - penalty + compatBonus)));
@@ -469,10 +502,12 @@ function AlbaFitV7() {
       const fit = fitScore(profile, j.req);
       const pf = prefScore(prefs, j.cond);
       const ab = adaptiveBonus(prefs, j.attrs);
-      const pen = payPenalty(prefs, j.payNum);
+      const pp = payProfile(prefs.pay);
+      const pen = payPenalty(prefs, j.payNum, pp);
+      const meet = payMeet(prefs, j.payNum, pp);
       const cp = compat(myTypeId, j.bossType);
-      const total = Math.max(0, Math.min(99, Math.round(fit * 0.5 + distScore(walk) * 0.3 + pf.score * 0.2 - pen + cp.bonus + ab.bonus)));
-      return { ...j, walk, fit, matched: [...pf.matched, ...ab.matched], pen, cp, ab, total };
+      const total = Math.max(0, Math.min(99, Math.round(fit * pp.wf + distScore(walk) * pp.wd + pf.score * pp.wp - pen + meet + cp.bonus + ab.bonus)));
+      return { ...j, walk, fit, matched: [...pf.matched, ...ab.matched], pen, meet, cp, ab, total };
     });
     if (sortKey === "fit") list.sort((a, b) => b.fit - a.fit);
     else if (sortKey === "near") list.sort((a, b) => a.walk - b.walk);
@@ -817,6 +852,7 @@ function AlbaFitV7() {
               {stage3Items.map(({ key }) => prefs[key] && prefs[key] !== "무관" && prefs[key] !== "금액보다 적성 우선" && (
                 <Chip key={key} bg={C.localSoft} color={C.local}>희망 · {prefs[key]}</Chip>
               ))}
+              {prefs.pay && <Chip bg={C.companySoft} color={C.company}>매칭 모드 · {payProfile(prefs.pay).label}</Chip>}
               <button onClick={resetTest} style={{ ...btn("transparent", C.sub), border: `1px solid ${C.line}`, padding: "5px 12px", fontSize: 12, borderRadius: 999 }}>다시 검사</button>
             </div>
           </div>
@@ -854,6 +890,7 @@ function AlbaFitV7() {
                         {j.cp.label && <Chip bg={j.cp.bonus > 0 ? C.companySoft : "#FDEDE7"} color={j.cp.bonus > 0 ? C.company : C.warn}>사장님 {j.cp.label}</Chip>}
                         {j.matched.map(m => <Chip key={m} bg={C.workerSoft} color={C.worker}>✓ {m}</Chip>)}
                         {j.ab.bonus > 0 && <Chip bg={C.localSoft} color={C.local}>맞춤 조건 +{j.ab.bonus}점</Chip>}
+                        {j.meet > 0 && <Chip bg={C.companySoft} color={C.company}>시급 조건 충족 +{j.meet}점</Chip>}
                         {j.pen > 0 && <Chip bg="#FDEDE7" color={C.warn}>희망 시급 미달 −{j.pen}점</Chip>}
                         {j.tags.map(t => <Chip key={t}>{t}</Chip>)}
                         <Chip bg={C.companySoft} color={C.company}>예상 근속 {tenureMonths(j.total)}개월</Chip>
