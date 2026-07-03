@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>알바핏 — 걸어서 10분, 적성 90점</title>
-<meta property="og:title" content="알바핏 — 걸어서 10분, 적성 90점" />
-<meta property="og:description" content="알바를 그만두는 이유는 둘뿐 — 멀거나, 안 맞거나. 우리 동네 적성 매칭 알바핏" />
+<title>알바핏 — 경력이 되는 알바, 적성 90점</title>
+<meta property="og:title" content="알바핏 — 경력이 되는 알바, 적성 90점" />
+<meta property="og:description" content="맞는 알바는 이력서 첫 줄이 되고, 맞는 채용은 1년을 맡깁니다. 우리 동네 적성 매칭 알바핏" />
 <meta property="og:type" content="website" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 <style>html,body{margin:0;padding:0;background:#F5F6F2}</style>
@@ -557,15 +557,16 @@ function AlbaFitV7() {
                 📍 {myDong} · 동네 인증 알바 매칭 · 지금 도보 15분 내 <span style={{ color: C.gold }}>{nearCnt}건</span>
               </div>
               <h1 className="hero-line2" style={{ margin: "26px 0 14px", lineHeight: 1.06, letterSpacing: -2.5 }}>
-                <span style={{ display: "block", fontSize: "clamp(46px, 8vw, 76px)", fontWeight: 900, background: `linear-gradient(90deg, ${C.local}, #FFB35C)`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>걸어서 10분,</span>
-                <span style={{ display: "block", fontSize: "clamp(46px, 8vw, 76px)", fontWeight: 900, background: "linear-gradient(90deg, #7EA0FF, #B9CBFF)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>적성 90점.</span>
+                <span style={{ display: "block", fontSize: "clamp(46px, 8vw, 76px)", fontWeight: 900, background: `linear-gradient(90deg, ${C.local}, #FFB35C)`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>경력이 되는 알바,</span>
+                <span style={{ display: "block", fontSize: "clamp(46px, 8vw, 76px)", fontWeight: 900, background: "linear-gradient(90deg, #7EA0FF, #B9CBFF)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>시간이 되는 채용.</span>
               </h1>
               <div className="hero-line3" style={{ fontSize: "clamp(17px, 2.6vw, 22px)", fontWeight: 800, marginBottom: 10 }}>
-                알바를 그만두는 이유는 둘뿐 — <span style={{ color: "#FF9A5C" }}>멀거나</span>, <span style={{ color: "#9FB6FF" }}>안 맞거나</span>.
+                맞는 알바는 <span style={{ color: "#FF9A5C" }}>이력서 첫 줄</span>이 되고, 맞는 채용은 <span style={{ color: "#9FB6FF" }}>1년의 시간</span>이 됩니다.
               </div>
               <p className="hero-line3" style={{ fontSize: 14.5, color: "#B9BFCC", lineHeight: 1.75, maxWidth: 540, margin: "0 0 20px" }}>
-                답변에 따라 문항이 달라지는 <b style={{ color: "#fff" }}>맞춤형 적성 검사</b>로 나의 알바 유형을 확인하고,
-                걸어갈 수 있는 거리의 오래 다닐 알바를 핏 점수·사장님 궁합·예상 근속과 함께 받아보세요.
+                아무 알바는 시급에서 끝나지만, 적성에 맞는 알바는 다음 직장의 경력이 됩니다.
+                사장님께는 — 맞는 사람 하나가 <b style={{ color: "#fff" }}>교육 한 달과 재채용의 시간</b>을 지워드립니다.
+                맞춤형 적성 검사로, 걸어갈 거리에서, 서로에게 맞는 사람과 일을 연결합니다.
               </p>
               <div className="hero-line3" style={{ display: "flex", gap: 4, marginBottom: 22, fontSize: 26, flexWrap: "wrap" }}>
                 {CHARACTERS.map(c => <span key={c.id} title={c.name}>{c.emoji}</span>)}
@@ -582,7 +583,7 @@ function AlbaFitV7() {
                 </button>
               </div>
               <div style={{ display: "flex", gap: 26, flexWrap: "wrap", paddingBottom: 26 }}>
-                {[["1개월", "평균 숙련 기간"], ["2.8배", "핏 80점+ 근속"], [`${WEEKLY_DONE}명`, "이번 주 강동구 검사 완료"]].map(([n, l]) => (
+                {[["1개월", "미스매칭 시 낭비되는 교육"], ["2.8배", "핏 80점+ 근속"], [`${WEEKLY_DONE}명`, "이번 주 강동구 검사 완료"]].map(([n, l]) => (
                   <div key={l}>
                     <div style={{ fontSize: 26, fontWeight: 900 }}>{n}</div>
                     <div style={{ fontSize: 11.5, color: "#9AA1B0", fontWeight: 700 }}>{l}</div>
